@@ -1,4 +1,0 @@
-V41_FOLD_8 Results:
-Trades: 24
-Win Rate: 41.7%
-Net PnL: Rs +14.82

@@ -1,7 +1,0 @@
-V34_3_2019 Results:
-Trades: 54
-Win Rate: 46.3%
-Net PnL: Rs +8.48
-Final Capital: Rs 508.48
-Profit Factor: 1.02
-Max Drawdown: 21.3%

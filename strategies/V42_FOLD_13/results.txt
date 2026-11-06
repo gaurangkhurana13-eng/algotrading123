@@ -1,4 +1,0 @@
-V42_FOLD_13 Results:
-Trades: 50
-Win Rate: 32.0%
-Net PnL: Rs -100.57

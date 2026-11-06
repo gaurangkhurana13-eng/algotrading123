@@ -1,4 +1,0 @@
-timestamp,ticker,direction,confidence,mc_win_prob,mc_expected_ev,entry_price,exit_price,qty,position_exposure,risk_budget,gross_pnl,charges,net_pnl,capital,winner,realized_return_pct
-2026-09-16 14:15:00+05:30,RENUKA,BUY,82.21,84.35,11.55,23.05,22.88,81,1867.17,20.0,-13.89,1.98,-15.87,484.13,False,-0.69
-2026-09-30 11:45:00+05:30,IRCON,BUY,79.95,83.6,10.27,119.08,116.49,7,833.56,20.0,-18.1,0.88,-18.98,465.15,False,-2.12
-2026-10-15 11:30:00+05:30,JAICORPLTD,BUY,77.07,81.85,10.19,97.7,95.33,8,781.59,20.0,-18.95,0.82,-19.77,445.38,False,-2.38

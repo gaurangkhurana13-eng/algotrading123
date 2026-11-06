@@ -2,35 +2,14 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
+# Environments
 .venv/
 venv/
-ENV/
 env/
 
-# Large datasets and backtest caches (keep repo lightweight < 15MB)
+# Datasets and caches
 data/
 junk/
 scratch/
@@ -39,15 +18,64 @@ reports/
 *.parquet
 *.h5
 *.feather
-groww_page_sample.html
+*.csv.gz
 
-# Local secrets & credentials (use GitHub Actions Secrets instead)
+# Exclude legacy strategies (Keep ONLY strategies/V43)
+strategies/V1/
+strategies/V2/
+strategies/V3/
+strategies/V4/
+strategies/V5/
+strategies/V6/
+strategies/V7/
+strategies/V8/
+strategies/V9/
+strategies/V10/
+strategies/V11/
+strategies/V12/
+strategies/V13/
+strategies/V14/
+strategies/V15/
+strategies/V16/
+strategies/V17/
+strategies/V18/
+strategies/V19/
+strategies/V20/
+strategies/V21/
+strategies/V22/
+strategies/V23/
+strategies/V24/
+strategies/V25/
+strategies/V26/
+strategies/V27/
+strategies/V28/
+strategies/V29/
+strategies/V30/
+strategies/V31/
+strategies/V32/
+strategies/V33/
+strategies/V34/
+strategies/V35/
+strategies/V36/
+strategies/V37/
+strategies/V38/
+strategies/V39/
+strategies/V40/
+strategies/V41/
+strategies/V42/
+strategies/Predator_V4_Omni_Dual_Clean.pine
+
+# Exclude legacy testing folders
+trading_system/
+real_versions/
+lightgbm/
+V20/
+V21/
+catboost/
+
+# Local secrets & configs
 config/telegram_config.json
-
-# Logs
 *.log
-
-# OS & Editor
 .DS_Store
 Thumbs.db
 .vscode/

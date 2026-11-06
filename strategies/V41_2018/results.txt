@@ -1,7 +1,0 @@
-V41_2018 Results:
-Trades: 65
-Win Rate: 50.8%
-Net PnL: Rs -94.35
-Final Capital: Rs 405.65
-Profit Factor: 0.75
-Max Drawdown: 22.5%

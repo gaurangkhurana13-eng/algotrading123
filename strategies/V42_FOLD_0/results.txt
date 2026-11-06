@@ -1,4 +1,0 @@
-V42_FOLD_0 Results:
-Trades: 75
-Win Rate: 50.7%
-Net PnL: Rs +1024.95

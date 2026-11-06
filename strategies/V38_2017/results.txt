@@ -1,7 +1,0 @@
-V38_2017 Results:
-Trades: 94
-Win Rate: 39.4%
-Net PnL: Rs -191.02
-Final Capital: Rs 308.98
-Profit Factor: 0.51
-Max Drawdown: 38.2%

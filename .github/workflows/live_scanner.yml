@@ -1,4 +1,4 @@
-name: Bhavishya Live Cloud Forward-Tester
+name: Bhavishya V43 Titan Live Cloud Forward-Tester
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Allows manual 1-click start anytime from phone or web
 
 jobs:
-  run-live-scanner:
+  run-v43-live-scanner:
     runs-on: ubuntu-latest
     timeout-minutes: 380 # Runs for the entire trading day (09:15 to 15:30 IST)
 
@@ -27,7 +27,7 @@ jobs:
           pip install requests pandas numpy websocket-client
           pip install git+https://github.com/rongardF/tvdatafeed.git || pip install tvdatafeed
 
-      - name: Run Bhavishya Live Telegram Forward-Tester
+      - name: Run Bhavishya V43 Titan Live Scanner
         env:
           PYTHONUNBUFFERED: "1"
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

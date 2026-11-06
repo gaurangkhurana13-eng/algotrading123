@@ -1,1 +1,0 @@
-{"props":{"pageProps":{}},"page":"/calculators/brokerage-calculator","query":{},"buildId":"TeLUYqlzCQPkJ-bA6ivMv","nextExport":true,"autoExport":true,"isFallback":false,"scriptLoader":[]}

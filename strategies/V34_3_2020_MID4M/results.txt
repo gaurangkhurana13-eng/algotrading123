@@ -1,4 +1,0 @@
-V34_3_2020_MID4M Results:
-Trades: 52
-Win Rate: 55.8%
-Net PnL: Rs -19.11

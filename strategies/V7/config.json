@@ -1,9 +1,0 @@
-{
-  "st_period": 10,
-  "st_mult": 2.5,
-  "sl_mult": 1.0,
-  "p1_trig": 0.85,
-  "p1_lock": 0.4,
-  "p2_trig": 1.7,
-  "trail_dist": 0.65
-}
