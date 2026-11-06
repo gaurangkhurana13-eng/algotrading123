@@ -29,7 +29,8 @@ jobs:
 
       - name: Run Bhavishya Live Telegram Forward-Tester
         env:
+          PYTHONUNBUFFERED: "1"
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          python scripts/live_telegram_forward_tester.py --live
+          python -u scripts/live_telegram_forward_tester.py --live

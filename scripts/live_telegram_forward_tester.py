@@ -2,6 +2,7 @@
 Bhavishya Autonomous Live Telegram Forward-Testing Engine
 Dual-Engine: PC Jeweller 1m Live Predator V3 + Bhavishya V43 Titan 15m
 100% Free, Live, Precise, and Accurate Real-Time Cloud Dispatcher
+Strict IST Timezone & Real-Time Console Flushing
 """
 
 import os
@@ -15,11 +16,20 @@ import requests
 import pandas as pd
 import numpy as np
 
-# Force UTF-8 stdout
-sys.stdout.reconfigure(encoding='utf-8')
+# Force UTF-8 and unbuffered stdout
+sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "strategies"))
+
+# ==============================================================================
+# TIMEZONE HELPER (STRICT IST = UTC + 5:30)
+# ==============================================================================
+IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+
+def get_ist_now() -> datetime.datetime:
+    """Returns current datetime in Indian Standard Time (IST)."""
+    return datetime.datetime.now(IST)
 
 # ==============================================================================
 # TELEGRAM CONFIGURATION
@@ -45,7 +55,8 @@ def send_telegram_alert(message: str, bot_token: str = None, chat_id: str = None
     c_id = chat_id or TELEGRAM_CHAT_ID
     
     if not token or not c_id:
-        print("[TELEGRAM ALERT (OFFLINE / NO TOKEN)]:\n" + message)
+        print(f"[TELEGRAM WARNING] Missing credentials! Token set: {bool(token)}, Chat ID set: {bool(c_id)}", flush=True)
+        print("[TELEGRAM ALERT (OFFLINE DUMP)]:\n" + message, flush=True)
         return False
         
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -56,10 +67,15 @@ def send_telegram_alert(message: str, bot_token: str = None, chat_id: str = None
         "disable_web_page_preview": True
     }
     try:
-        resp = requests.post(url, json=payload, timeout=8)
-        return resp.status_code == 200
+        resp = requests.post(url, json=payload, timeout=10)
+        if resp.status_code == 200:
+            print(f"[TELEGRAM] Alert sent successfully to chat {c_id}", flush=True)
+            return True
+        else:
+            print(f"[TELEGRAM ERROR] API returned status {resp.status_code}: {resp.text}", flush=True)
+            return False
     except Exception as e:
-        print(f"[ERROR] Failed to send Telegram alert: {e}")
+        print(f"[ERROR] Failed to send Telegram alert: {e}", flush=True)
         return False
 
 # ==============================================================================
@@ -84,7 +100,7 @@ def estimate_dhan_charges(buy_p: float, sell_p: float, qty: int) -> float:
 def format_v3_entry(symbol: str, price: float, sl: float, tp: float, qty: int, capital: float, charges: float) -> str:
     trade_val = round(price * qty, 2)
     return (
-        f"🎯 <b>[PC JEWELLER 1M LIVE PREDATOR V3 — ENTRY]</b>\n"
+        f"🎯 <b>[PREDATOR V3 — ENTRY BREAKOUT]</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"📌 <b>Stock:</b> <code>{symbol}</code>\n"
         f"⚡ <b>Action:</b> BUY (Intraday MIS 5x)\n"
@@ -95,7 +111,7 @@ def format_v3_entry(symbol: str, price: float, sl: float, tp: float, qty: int, c
         f"💼 <b>Wallet Capital:</b> ₹{capital:.2f}\n"
         f"🪙 <b>5x Trade Value:</b> ₹{trade_val:.2f} ({qty} shares)\n"
         f"🧾 <b>Est. Dhan Charges:</b> ₹{charges:.2f} (0.03% / ₹20 cap)\n"
-        f"⏰ <b>Trigger Time:</b> {datetime.datetime.now().strftime('%H:%M:%S IST')}\n"
+        f"⏰ <b>Trigger Time:</b> {get_ist_now().strftime('%H:%M:%S IST')}\n"
         f"💡 <i>Setup: 30-Min ORB High Breakout + VWAP Confirmation</i>"
     )
 
@@ -114,7 +130,7 @@ def format_v3_exit(symbol: str, entry_p: float, exit_p: float, qty: int, reason:
         f"📊 <b>Gross PnL:</b> ₹{gross:+.2f}\n"
         f"🧾 <b>Dhan Statutory Fees:</b> ₹{charges:.2f}\n"
         f"💎 <b>Net PnL:</b> <b>₹{net:+.2f}</b>\n"
-        f"⏰ <b>Exit Time:</b> {datetime.datetime.now().strftime('%H:%M:%S IST')}\n"
+        f"⏰ <b>Exit Time:</b> {get_ist_now().strftime('%H:%M:%S IST')}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
@@ -133,7 +149,7 @@ def format_v43_entry(symbol: str, price: float, sl: float, qty: int, capital: fl
         f"🪙 <b>5x Trade Value:</b> ₹{trade_val:.2f} ({qty} shares)\n"
         f"🧾 <b>Est. Dhan Charges:</b> ₹{charges:.2f}\n"
         f"🎯 <b>Alpha Pattern:</b> <code>{pattern}</code>\n"
-        f"⏰ <b>Time:</b> {datetime.datetime.now().strftime('%H:%M:%S IST')}\n"
+        f"⏰ <b>Time:</b> {get_ist_now().strftime('%H:%M:%S IST')}\n"
         f"💡 <i>Ratchet: MFE +0.45 ATR lock to Breakeven | Runners Trailed</i>"
     )
 
@@ -152,7 +168,7 @@ def format_v43_exit(symbol: str, entry_p: float, exit_p: float, qty: int, reason
         f"📊 <b>Gross PnL:</b> ₹{gross:+.2f}\n"
         f"🧾 <b>Dhan Statutory Fees:</b> ₹{charges:.2f}\n"
         f"💎 <b>Net PnL:</b> <b>₹{net:+.2f}</b>\n"
-        f"⏰ <b>Exit Time:</b> {datetime.datetime.now().strftime('%H:%M:%S IST')}\n"
+        f"⏰ <b>Exit Time:</b> {get_ist_now().strftime('%H:%M:%S IST')}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
@@ -160,29 +176,36 @@ def format_v43_exit(symbol: str, entry_p: float, exit_p: float, qty: int, reason
 # LIVE REAL-TIME CLOUD SCANNER LOOP
 # ==============================================================================
 def run_live_cloud_scanner(initial_wallet: float = 500.0):
-    """
-    Continuous real-time market scanner running on GitHub Actions / Cloud.
-    Monitors all target stocks across 1m and 15m timeframes from 09:15 to 15:30 IST.
-    """
     from tvDatafeed import TvDatafeed, Interval
 
-    print("\n=======================================================")
-    print("  BHAVISHYA AUTONOMOUS LIVE CLOUD SCANNER ACTIVATED")
-    print("  Engine 1: 1m Micro Predator V3 (ORB Sniper)")
-    print("  Engine 2: 15m Institutional V43 Titan")
-    print("=======================================================\n")
+    now_ist = get_ist_now()
+    print("\n=======================================================", flush=True)
+    print("  BHAVISHYA AUTONOMOUS LIVE CLOUD SCANNER ACTIVATED", flush=True)
+    print(f"  Current Time (IST): {now_ist.strftime('%Y-%m-%d %H:%M:%S IST')}", flush=True)
+    print(f"  Bot Token Injected: {'YES' if TELEGRAM_BOT_TOKEN else 'NO (Check GitHub Secrets!)'}", flush=True)
+    print(f"  Chat ID Injected:   {'YES (' + str(TELEGRAM_CHAT_ID) + ')' if TELEGRAM_CHAT_ID else 'NO (Check GitHub Secrets!)'}", flush=True)
+    print("  Engine 1: 1m Micro Predator V3 (ORB Sniper)", flush=True)
+    print("  Engine 2: 15m Institutional V43 Titan", flush=True)
+    print("=======================================================\n", flush=True)
 
-    send_telegram_alert(
+    sent = send_telegram_alert(
         "🚀 <b>BHAVISHYA CLOUD SCANNER ONLINE!</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "Platform: <b>GitHub Cloud Runner (Zero Laptop On)</b>\n"
-        "Live Market Feeds: <b>NSE 1-Min & 15-Min (Active)</b>\n"
-        "Monitored: <b>All Target Stocks Simultaneously</b>\n"
-        "Status: <b>Scanning for Alpha Breakouts...</b>"
+        "Platform: <b>GitHub Actions Cloud Runner (Ubuntu)</b>\n"
+        f"Start Time: <b>{now_ist.strftime('%d-%b-%Y %H:%M:%S IST')}</b>\n"
+        "Live Feeds: <b>NSE 1-Min & 15-Min Streams (Active)</b>\n"
+        "Universe: <b>PC Jeweller, South Bank, Suzlon, MTNL, NMDC + Titans</b>\n"
+        "Mode: <b>Real-Time Paper Forward Testing</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "Zero laptop involvement. Signals will ping your phone live!"
     )
+    if sent:
+        print("[SUCCESS] Startup Telegram announcement delivered to phone!", flush=True)
+    else:
+        print("[WARNING] Could not deliver startup alert to Telegram. Verify GitHub Secrets.", flush=True)
 
     tv = TvDatafeed()
-    v3_symbols = ["PCJEWELLER", "SOUTHBANK", "SUZLON"]
+    v3_symbols = ["PCJEWELLER", "SOUTHBANK", "SUZLON", "IDFCFIRSTB", "NMDC"]
     v43_symbols = ["MTNL", "SOUTHBANK", "RCF", "NBCC", "COALINDIA", "TATASTEEL", "SAIL", "SUZLON", "PCJEWELLER", "IOB"]
 
     wallet = initial_wallet
@@ -190,8 +213,10 @@ def run_live_cloud_scanner(initial_wallet: float = 500.0):
     daily_trades_v3 = 0
     daily_trades_v43 = 0
 
+    scan_iteration = 0
     while True:
-        now = datetime.datetime.now()
+        scan_iteration += 1
+        now = get_ist_now()
         cur_time = now.time()
 
         # Check market session (09:15 to 15:30 IST)
@@ -200,11 +225,14 @@ def run_live_cloud_scanner(initial_wallet: float = 500.0):
         t_eod_cutoff = datetime.time(15, 15)
         t_close = datetime.time(15, 30)
 
-        # In live mode outside market hours: sleep 60s
+        # Outside market hours
         if cur_time > t_close or cur_time < t_open:
-            print(f"[{now.strftime('%H:%M:%S')}] Outside NSE market hours. Market closed.")
+            if scan_iteration % 5 == 1:
+                print(f"[{now.strftime('%H:%M:%S IST')}] Outside NSE Trading Hours (09:15-15:30). Waiting for market open...", flush=True)
             time.sleep(60)
             continue
+
+        print(f"[{now.strftime('%H:%M:%S IST')}] Starting Scan Cycle #{scan_iteration} across {len(v3_symbols) + len(v43_symbols)} stocks...", flush=True)
 
         # 1. Manage Active Positions
         for sym in list(positions.keys()):
@@ -220,21 +248,17 @@ def run_live_cloud_scanner(initial_wallet: float = 500.0):
             except Exception:
                 continue
 
-            # Update highest price seen
             pos["high_seen"] = max(pos["high_seen"], cur_high)
 
-            # EOD Cutoff Exit at 15:15
+            # EOD Cutoff Exit at 15:15 IST
             if cur_time >= t_eod_cutoff:
                 chg = estimate_dhan_charges(pos["entry_p"], cur_close, pos["qty"])
-                if eng == "V3":
-                    msg = format_v3_exit(sym, pos["entry_p"], cur_close, pos["qty"], "15:15 EOD SQUARE OFF", chg)
-                else:
-                    msg = format_v43_exit(sym, pos["entry_p"], cur_close, pos["qty"], "15:15 EOD SQUARE OFF", chg)
+                msg = format_v3_exit(sym, pos["entry_p"], cur_close, pos["qty"], "15:15 EOD SQUARE OFF", chg) if eng == "V3" else format_v43_exit(sym, pos["entry_p"], cur_close, pos["qty"], "15:15 EOD SQUARE OFF", chg)
                 send_telegram_alert(msg)
                 del positions[sym]
                 continue
 
-            # Exit logic for V3 Sniper
+            # Exit logic for V3
             if eng == "V3":
                 if cur_high >= pos["tp"]:
                     fill_p = pos["tp"]
@@ -249,14 +273,14 @@ def run_live_cloud_scanner(initial_wallet: float = 500.0):
                     del positions[sym]
                     continue
 
-            # Exit logic for V43 Titan (Asymmetric Ratchet)
+            # Exit logic for V43
             if eng == "V43":
                 mfe = pos["high_seen"] - pos["entry_p"]
                 atr = pos["atr"]
                 if mfe >= 0.85 * atr:
                     pos["sl"] = max(pos["sl"], pos["entry_p"] + (0.40 * atr))
                 elif mfe >= 0.45 * atr:
-                    pos["sl"] = max(pos["sl"], pos["entry_p"] + (0.05 * atr)) # Breakeven Lock
+                    pos["sl"] = max(pos["sl"], pos["entry_p"] + (0.05 * atr))
 
                 if cur_low <= pos["sl"]:
                     fill_p = pos["sl"]
@@ -265,7 +289,7 @@ def run_live_cloud_scanner(initial_wallet: float = 500.0):
                     del positions[sym]
                     continue
 
-        # 2. Engine 1: Scan V3 Micro Sniper (1-Min ORB)
+        # 2. Scan V3 Micro Sniper (1-Min ORB)
         if cur_time >= t_orb_end and daily_trades_v3 < 2 and len(positions) == 0:
             for s in v3_symbols:
                 try:
@@ -295,9 +319,9 @@ def run_live_cloud_scanner(initial_wallet: float = 500.0):
                         daily_trades_v3 += 1
                         break
                 except Exception as e:
-                    print(f"[ERROR V3 Scan {s}]: {e}")
+                    print(f"[ERROR V3 Scan {s}]: {e}", flush=True)
 
-        # 3. Engine 2: Scan V43 Titan (15-Min)
+        # 3. Scan V43 Titan (15-Min)
         if cur_time >= datetime.time(9, 45) and cur_time <= datetime.time(14, 15) and len(positions) == 0 and daily_trades_v43 < 2:
             for s in v43_symbols:
                 try:
@@ -335,10 +359,9 @@ def run_live_cloud_scanner(initial_wallet: float = 500.0):
                         daily_trades_v43 += 1
                         break
                 except Exception as e:
-                    print(f"[ERROR V43 Scan {s}]: {e}")
+                    print(f"[ERROR V43 Scan {s}]: {e}", flush=True)
 
-        # Sleep between scanning cycles
-        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Live scan cycle completed. Monitored target stocks. Positions: {len(positions)}")
+        print(f"[{now.strftime('%H:%M:%S IST')}] Cycle #{scan_iteration} complete. Positions: {len(positions)}. Sleeping 55s...", flush=True)
         time.sleep(55)
 
 if __name__ == "__main__":
@@ -354,21 +377,23 @@ if __name__ == "__main__":
     chat_id = args.chat_id or TELEGRAM_CHAT_ID
 
     if args.test:
+        now_ist = get_ist_now()
         init_msg = (
             "🚀 <b>BHAVISHYA TELEGRAM DISPATCHER ACTIVATED!</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "Status: <b>ONLINE & LIVE</b>\n"
+            "Status: <b>ONLINE & LIVE (Cloud Verified)</b>\n"
+            f"Server Time: <b>{now_ist.strftime('%d-%b-%Y %H:%M:%S IST')}</b>\n"
             "Mode: <b>Forward-Testing / Paper Trading</b>\n"
             "Engines Monitored:\n"
             "  1. 🎯 <b>PC Jeweller 1m Live Predator V3</b> (1-Min ORB Sniper)\n"
             "  2. 🏛️ <b>Bhavishya V43 Titan</b> (15-Min Institutional Fortress)\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "Screen pe baithne ki zaroorat nahi hai. Setup bante hi seedha notification aayega!"
+            "Cloud Runner connected. Signals will ping your phone live!"
         )
         send_telegram_alert(init_msg, token, chat_id)
-        print("✅ SUCCESS! Test alert sent.")
+        print("✅ SUCCESS! Test alert sent.", flush=True)
     elif args.live:
         run_live_cloud_scanner(initial_wallet=500.0)
     else:
-        print("Bhavishya Live Telegram Engine Ready.")
-        print("Run with --test or --live.")
+        print("Bhavishya Live Telegram Engine Ready.", flush=True)
+        print("Run with --test or --live.", flush=True)
