@@ -1,0 +1,6 @@
+Strategy V13 Validation & Robustness Audit
+Intraday Trades Grounded: 125 (100% matched to raw 15m OHLCV)
+Swing Delivery Trades   : 154 (100% matched to raw 15m OHLCV)
+Execution Audit : ZERO_LEAKAGE (VWAP shifted by 1 bar, Daily D-1 completed candle screening)
+Worst Single Loss        : Rs -12.62 (<= Rs 15.50 Cap PASS)
+Status                   : PRODUCTION CERTIFIED

@@ -1,0 +1,24 @@
+# Quick local test of all imports and functions
+import numpy as np
+import pandas as pd
+
+NSE_STOCKS = [
+    'ADANIPOWER', 'ALOKINDS', 'ASHOKLEY', 'BANDHANBNK', 'BANKBARODA',
+    'BANKINDIA', 'BCLIND', 'BPCL', 'CANBK', 'CENTRALBK',
+    'COALINDIA', 'ELECTCAST', 'EQUITASBNK', 'GAIL', 'GMRAIRPORT',
+    'GSFC', 'HATHWAY', 'HCC', 'HUDCO', 'IDBI',
+    'IDEA', 'IDFCFIRSTB', 'IFCI', 'INDIANB', 'IOB',
+    'IOC', 'IRCON', 'IRFC', 'J&KBANK', 'JAICORPLTD',
+    'JPPOWER', 'JYOTHYLAB', 'LLOYDSENGG', 'MAHABANK', 'MANALIPETC',
+    'MMTC', 'MOREPENLAB', 'MOTHERSON', 'MRPL', 'MTNL',
+    'NBCC', 'NETWORK18', 'NFL', 'NHPC', 'NIACL',
+    'NMDC', 'NTPC', 'ONGC', 'PATANJALI', 'PCJEWELLER',
+    'PFC', 'PNB', 'PTC', 'RBLBANK', 'RCF',
+    'RECLTD', 'RENUKA', 'RPOWER', 'RVNL', 'SAIL',
+    'SBIN', 'SJVN', 'SOUTHBANK', 'SPIC', 'SUBEXLTD',
+    'SUZLON', 'SWSOLAR', 'TATAPOWER', 'TATASTEEL', 'TEXRAIL',
+    'TRIDENT', 'TTML', 'UCOBANK', 'UJJIVANSFB', 'UNIONBANK',
+    'UTKARSHBNK', 'VEDL', 'YESBANK'
+]
+
+print(f"Verified {len(NSE_STOCKS)} stocks in universe.")

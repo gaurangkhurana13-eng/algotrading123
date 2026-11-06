@@ -1,0 +1,101 @@
+//@version=6
+strategy("Bhavishya V33 Multi-Wave Compounding Engine", overlay=true, initial_capital=500, default_qty_type=strategy.cash, default_qty_value=500, commission_type=strategy.commission.cash_per_order, commission_value=1.50, slippage=1, margin_long=20)
+
+// =============================================================================
+// BHAVISHYA V33 — CROSS-SECTIONAL REGIME-GATED MULTI-WAVE ENGINE (PINE V6)
+// =============================================================================
+
+// 1. Core Structural Indicators
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+ema110 = ta.ema(close, 110)
+
+atr14 = ta.atr(14)
+atr_pct = (atr14 / close) * 100.0
+
+rsi7 = ta.rsi(close, 7)
+vwap_raw = ta.vwap(hlc3)
+vwap_lag = vwap_raw[1]
+
+vol_sma20 = ta.sma(volume, 20)
+rvol = volume / (vol_sma20 + 1e-9)
+
+change10 = math.abs(close - close[10])
+volat10 = math.sum(math.abs(ta.change(close)), 10)
+er10 = change10 / (volat10 + 1e-9)
+
+mom_long = close > close[math.min(300, bar_index)]
+session_ok = not na(time(timeframe.period, "0930-1415"))
+squareoff_time = not na(time(timeframe.period, "1445-1510"))
+
+// Triggers
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+trig_a = ta.crossover(macdLine, signalLine) and (macdLine > 0)
+trig_b = (macdLine > signalLine) and (signalLine > 0) and (histLine[1] < histLine[2]) and (histLine > histLine[1]) and (close > high[1])
+box_h5 = ta.highest(high, 5)[1]
+box_l5 = ta.lowest(low, 5)[1]
+trig_c = (macdLine > signalLine) and ((box_h5 - box_l5) <= 1.85 * atr14) and (close > box_h5) and (rvol >= 1.45)
+
+entry_cond = (
+    session_ok and
+    (close > ema20) and (close > ema50) and (close > ema110) and
+    (close > vwap_lag) and
+    (er10 >= 0.35) and
+    (rsi7 > 50.0) and (rsi7 <= 82.0) and
+    (rvol >= 1.20) and
+    (atr_pct >= 0.50) and
+    mom_long and
+    ((close - ema20) / atr14 <= 3.20) and
+    (close <= 450.0) and (close >= 10.0) and
+    (trig_a or trig_b or trig_c)
+)
+
+var float active_sl = na
+var float high_seen = na
+var int bars_held = 0
+
+if (entry_cond and strategy.position_size == 0)
+    strategy.entry("Long", strategy.long)
+    active_sl := close - (0.88 * atr14)
+    high_seen := close
+    bars_held := 0
+
+if (strategy.position_size > 0)
+    bars_held := bars_held + 1
+    high_seen := math.max(high_seen, high[1])
+    mfe_atr = (high_seen - strategy.position_avg_price) / (atr14 + 1e-9)
+    
+    // 3-Bar Velocity Stagnation Cut
+    if (bars_held >= 3 and mfe_atr < 0.40 and close < vwap_lag and close < ema9)
+        active_sl := math.max(active_sl, strategy.position_avg_price - (0.35 * atr14))
+    
+    // Tier 1: Phase 1 Green Lock
+    if (mfe_atr >= 0.85 and mfe_atr < 1.65)
+        if (close >= ema20 or rsi7 >= 52.0)
+            active_sl := math.max(active_sl, strategy.position_avg_price + (0.42 * atr14))
+        else
+            active_sl := math.max(active_sl, high_seen - (0.25 * atr14))
+            
+    // Tier 2: Phase 2A EMA-9 Channel
+    if (mfe_atr >= 1.65 and mfe_atr < 3.50)
+        if (close >= ema9)
+            swing_low2 = math.min(low[1], low[2])
+            active_sl := math.max(active_sl, math.max(swing_low2 - (0.12 * atr14), ema9 - (0.32 * atr14)))
+        else
+            active_sl := math.max(active_sl, high_seen - (0.24 * atr14))
+            
+    // Tier 3: Phase 2B / Climax Lock
+    if (mfe_atr >= 3.50)
+        is_climax = (rvol >= 2.80 and (high - close) / (high - low + 1e-9) > 0.45) or (rsi7 >= 85.0) or (mfe_atr >= 6.00)
+        if (is_climax)
+            active_sl := math.max(active_sl, high_seen - (0.10 * atr14))
+        else if (close >= ema9)
+            active_sl := math.max(active_sl, math.max(ema9 - (0.18 * atr14), high_seen - (0.40 * atr14)))
+        else
+            active_sl := math.max(active_sl, high_seen - (0.16 * atr14))
+            
+    strategy.exit("Exit Long", "Long", stop=active_sl)
+
+if (squareoff_time)
+    strategy.close_all("EOD")

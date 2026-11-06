@@ -1,0 +1,2 @@
+symbol,direction,entry_time,exit_time,entry_price,exit_price,shares,sl,gross_pnl,charges,net_pnl,exit_reason
+TEXRAIL,LONG,2025-12-23 11:30:00,2025-12-23 11:45:00,139.67,141.49,8,138.27,14.56,1.21,13.35,STOP

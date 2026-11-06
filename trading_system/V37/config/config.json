@@ -1,0 +1,46 @@
+{
+  "version": "V37",
+  "system_name": "Bhavishya V37: High-Conviction ML Stacking Ensemble with Noise-Immune Tiered Breathing Stops & Chandelier Runner Ratchet",
+  "capital": 500.0,
+  "leverage": 5.0,
+  "max_notional_capital": 2450.0,
+  "max_executed_per_day": 4,
+  "max_concurrent_open": 2,
+  "max_trades_per_sector": 2,
+  "max_daily_loss": 25.0,
+  "r_net_cap": 15.50,
+  "round_trip_friction_rate": 0.002067,
+  "min_atr_floor": 0.0048,
+  "max_atr_cap": 0.0240,
+  "min_r_used": 11.50,
+  "tier1_atr_cutoff": 0.0075,
+  "tier2_atr_cutoff": 0.0110,
+  "tier1_sl_mult": 1.40,
+  "tier2_sl_mult": 1.45,
+  "tier3_sl_mult": 1.50,
+  "slippage_per_leg": 0.0005,
+  "hard_cutoff_time": "13:15",
+  "eod_square_time": "15:10",
+  "dhan_brokerage_rate": 0.0003,
+  "dhan_max_brokerage": 20.0,
+  "pre_trade_mc": {
+    "iterations": 2000,
+    "min_mc_win_prob": 0.48,
+    "distribution": "students_t",
+    "degrees_of_freedom": 5,
+    "seed": 42
+  },
+  "walk_forward": {
+    "n_folds": 5,
+    "embargo_days": 2,
+    "min_train_days": 15,
+    "iterations": 350,
+    "depth": 5,
+    "l2_reg": 5.0,
+    "learning_rate": 0.04
+  },
+  "global_monte_carlo": {
+    "iterations": 10000,
+    "seed": 42
+  }
+}

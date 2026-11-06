@@ -1,0 +1,82 @@
+{
+  "version": "V20",
+  "name": "Bhavishya V20: Full Institutional Synthesis",
+  "starting_capital": 500.0,
+  "leverage_mis": 5.0,
+  "universe": [
+    "PCJEWELLER.NS",
+    "RPOWER.NS",
+    "DELTACORP.NS",
+    "RITES.NS",
+    "IDEA.NS",
+    "MTNL.NS",
+    "ZEEL.NS",
+    "UTKARSHBNK.NS",
+    "IFCI.NS",
+    "NCC.NS"
+  ],
+  "entry_rules": {
+    "macd_cross_up": true,
+    "macd_above_zero": true,
+    "close_above_ema50": true,
+    "ema50_above_ema110": true,
+    "close_above_vwap_lag1": true,
+    "rsi7_min": 50.0,
+    "adx10_min": 18.0,
+    "plus_di_above_minus_di": true,
+    "max_price": 450.0,
+    "min_price": 10.0
+  },
+  "exit_rules": {
+    "initial_sl_mult_atr": 0.88,
+    "bar1_micro_stop": {
+      "enabled": true,
+      "max_mfe_atr": 0.3,
+      "vol_ratio_max": 0.7,
+      "tightened_sl_mult_atr": 0.35
+    },
+    "bar2_hard_stall": {
+      "enabled": true,
+      "max_close_le_entry": true,
+      "max_mfe_atr": 0.4,
+      "clv_min": 0.35,
+      "vol_ratio_max": 0.65
+    },
+    "bar3_scratch": {
+      "enabled": true,
+      "min_bars": 3,
+      "max_mfe_atr": 0.4,
+      "rsi7_max": 46.0
+    },
+    "hyper_trail": {
+      "phase1_activation_mfe_atr": 0.85,
+      "phase1_ratchet_atr": 0.22,
+      "phase2_activation_mfe_atr": 1.65,
+      "phase2_floor_atr": 0.8,
+      "phase2_trail_dist_atr": 0.65,
+      "phase3_activation_mfe_atr": 2.5,
+      "phase3_floor_atr": 1.65,
+      "phase3_swing_low_offset_atr": 0.15,
+      "phase3_trail_dist_atr": 1.1,
+      "phase4_climax_mfe_atr": 3.8,
+      "phase4_combo_mfe_atr": 2.8,
+      "phase4_combo_rsi_min": 82.0,
+      "phase4_combo_clv_max": 0.4,
+      "phase4_trail_dist_atr": 0.38
+    },
+    "squareoff_time": "14:45"
+  },
+  "risk_schedule": {
+    "tier1_equity_max": 1000.0,
+    "tier1_loss_cap": 40.0,
+    "tier1_slots": 1,
+    "tier2_equity_max": 2000.0,
+    "tier2_loss_cap": 110.0,
+    "tier2_slots": 1,
+    "tier3_loss_pct": 0.03,
+    "tier3_slots": 2,
+    "slot_max_bp_pct": 0.46,
+    "combined_max_bp_pct": 0.92,
+    "buffer_bp_pct": 0.08
+  }
+}

@@ -1,0 +1,23 @@
+Bhavishya V32 — 2026 Full Year Bull
+============================================================
+
+Intraday Results
+----------------
+Initial Capital : Rs 500.00
+Final Capital   : Rs 464.8609
+Net PnL         : Rs -35.1391
+Total Trades    : 14
+Win Rate        : 21.43%
+Profit Factor   : 0.2678
+Avg Win         : Rs 4.2842
+Avg Loss        : Rs 4.3629
+Max Drawdown    : 7.90%
+Total Charges   : Rs 8.3768
+Multiplier      : 0.9297x
+
+Swing Results
+-------------
+Initial Capital : Rs 500.00
+Final Capital   : Rs 500.00
+Net PnL         : Rs 0.00
+Total Trades    : 0

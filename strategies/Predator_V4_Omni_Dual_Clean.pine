@@ -1,0 +1,182 @@
+//@version=5
+strategy("Predator V4 Omni [Dual Long/Short + Chop Filter]", 
+         overlay=true, 
+         initial_capital=500, 
+         default_qty_type=strategy.fixed, 
+         default_qty_value=1,
+         commission_type=strategy.commission.percent, 
+         commission_value=0.03, 
+         slippage=1,
+         max_bars_back=5000)
+
+// ==========================================
+// 1. INPUTS & CONFIGURATION
+// ==========================================
+grp_risk   = "1. Capital & Risk Management (Dhan 5x MIS)"
+leverage   = input.float(5.0, "Dhan Intraday Leverage (MIS)", minval=1.0, maxval=5.0, group=grp_risk)
+slPct      = input.float(1.2, "Stop Loss %", minval=0.5, step=0.1, group=grp_risk) / 100
+tpPct      = input.float(2.5, "Take Profit %", minval=1.0, step=0.1, group=grp_risk) / 100
+trailPct   = input.float(1.2, "Trailing Trigger %", minval=0.5, step=0.1, group=grp_risk) / 100
+trailOff   = input.float(0.6, "Trailing Offset %", minval=0.2, step=0.1, group=grp_risk) / 100
+maxTrades  = input.int(2, "Max Trades Per Day", minval=1, maxval=4, group=grp_risk)
+
+grp_chop   = "2. Sideways / Chop Filter"
+adxThresh  = input.float(20.0, "Min ADX (Below = Sideways/No Trade)", minval=10.0, maxval=35.0, group=grp_chop)
+minOrbPct  = input.float(0.4, "Min ORB Width % (Avoid Barcode Stocks)", step=0.1, group=grp_chop)
+maxOrbPct  = input.float(4.0, "Max ORB Width % (Avoid Exhaustion Gaps)", step=0.1, group=grp_chop)
+
+grp_time   = "3. Market Session Timings (IST)"
+orbStartHour = 9,  orbStartMin = 15
+orbEndHour   = 9,  orbEndMin   = 45
+sqOffHour    = 15, sqOffMin    = 15
+
+// ==========================================
+// 2. TIMEFRAME & REGIME ENGINES
+// ==========================================
+// Daily 20 EMA Filter for Macro Direction (Higher Timeframe)
+dailyEma   = request.security(syminfo.tickerid, "D", ta.ema(close, 20), lookahead=barmerge.lookahead_off)
+dailyClose = request.security(syminfo.tickerid, "D", close, lookahead=barmerge.lookahead_off)
+isMacroBull = dailyClose >= dailyEma
+isMacroBear = dailyClose < dailyEma
+
+// ADX 14 Calculation for Sideways/Chop Detection
+[diplus, diminus, adxVal] = ta.dmi(14, 14)
+isTrending = adxVal >= adxThresh
+
+// Volume & VWAP
+volSma   = ta.sma(volume, 20)
+volOk    = volume >= (volSma * 1.05)
+sessVwap = ta.vwap(hlc3)
+
+// IST Time Calculation (Strict Asia/Kolkata)
+istHour   = hour(time, "Asia/Kolkata")
+istMinute = minute(time, "Asia/Kolkata")
+timeInMinutes = istHour * 60 + istMinute
+
+isOrbWindow   = (timeInMinutes >= (orbStartHour * 60 + orbStartMin)) and (timeInMinutes < (orbEndHour * 60 + orbEndMin))
+isTradingTime = (timeInMinutes >= (orbEndHour * 60 + orbEndMin)) and (timeInMinutes < (sqOffHour * 60 + sqOffMin))
+isSquareOff   = (timeInMinutes >= (sqOffHour * 60 + sqOffMin))
+isNewDay      = ta.change(time("D")) != 0
+
+// ==========================================
+// 3. 30-MINUTE ORB CALCULATION
+// ==========================================
+var float orbHigh = na
+var float orbLow  = na
+var int tradesToday = 0
+
+if isNewDay
+    orbHigh := na
+    orbLow  := na
+    tradesToday := 0
+
+if isOrbWindow
+    orbHigh := na(orbHigh) ? high : math.max(orbHigh, high)
+    orbLow  := na(orbLow)  ? low  : math.min(orbLow, low)
+
+orbRangePct = (not na(orbHigh) and not na(orbLow) and orbLow > 0) ? ((orbHigh - orbLow) / orbLow) * 100 : 0
+validOrbRange = (orbRangePct >= minOrbPct) and (orbRangePct <= maxOrbPct)
+
+// Visual Plots
+plot(not isOrbWindow and not na(orbHigh) ? orbHigh : na, "ORB 30m High", color=color.new(color.green, 20), linewidth=2, style=plot.style_linebr)
+plot(not isOrbWindow and not na(orbLow)  ? orbLow  : na, "ORB 30m Low",  color=color.new(color.red, 20), linewidth=2, style=plot.style_linebr)
+plot(sessVwap, "Session VWAP", color=color.new(color.orange, 30), linewidth=2)
+
+// ==========================================
+// 4. SIGNALS & EXECUTION
+// ==========================================
+bool isSideways = not isTrending or not validOrbRange or (close >= orbLow and close <= orbHigh)
+
+// Long Conditions
+bool longSignal = isTradingTime and (tradesToday < maxTrades) and isMacroBull and isTrending and validOrbRange and ta.crossover(close, orbHigh) and (close > sessVwap) and volOk and (strategy.position_size == 0)
+
+// Short Conditions
+bool shortSignal = isTradingTime and (tradesToday < maxTrades) and isMacroBear and isTrending and validOrbRange and ta.crossunder(close, orbLow) and (close < sessVwap) and volOk and (strategy.position_size == 0)
+
+// Position Sizing: 5x Leverage on Current Equity
+tradePower = strategy.equity * leverage
+orderQty   = math.max(1, math.floor(tradePower / close))
+
+var float entryPrice = na
+
+// Entries
+if longSignal
+    strategy.entry("Long Predator", strategy.long, qty=orderQty, comment="BULL-ENTER")
+    entryPrice := close
+    tradesToday += 1
+
+if shortSignal
+    strategy.entry("Short Predator", strategy.short, qty=orderQty, comment="BEAR-ENTER")
+    entryPrice := close
+    tradesToday += 1
+
+// Long Exits
+if strategy.position_size > 0
+    float longSL = entryPrice * (1.0 - slPct)
+    float longTP = entryPrice * (1.0 + tpPct)
+    strategy.exit("Long Exit", "Long Predator", stop=longSL, limit=longTP, comment_loss="SL-HIT", comment_profit="TP-HIT")
+
+// Short Exits
+if strategy.position_size < 0
+    float shortSL = entryPrice * (1.0 + slPct)
+    float shortTP = entryPrice * (1.0 - tpPct)
+    strategy.exit("Short Exit", "Short Predator", stop=shortSL, limit=shortTP, comment_loss="SL-HIT", comment_profit="TP-HIT")
+
+// EOD 15:15 Square Off
+if isSquareOff and strategy.position_size != 0
+    strategy.close_all(comment="EOD-SQUAREOFF")
+    entryPrice := na
+
+if strategy.position_size == 0
+    entryPrice := na
+
+// ==========================================
+// 5. REAL-TIME INTELLIGENT DASHBOARD
+// ==========================================
+var table dash = table.new(position.top_right, 2, 7, bgcolor=color.new(color.black, 15), border_color=color.gray, border_width=1)
+
+if barstate.islast
+    string regimeText  = "INITIALIZING"
+    color  regimeColor = color.gray
+
+    if isSquareOff
+        regimeText  := "SESSION CLOSED"
+        regimeColor := color.purple
+    else if not isTradingTime
+        regimeText  := "ORB BUILDING (9:15-9:45)"
+        regimeColor := color.blue
+    else if isSideways
+        regimeText  := "SIDEWAYS / NO TRADE"
+        regimeColor := color.orange
+    else if isMacroBull
+        regimeText  := "BULL ACTIVE (LONG ONLY)"
+        regimeColor := color.green
+    else if isMacroBear
+        regimeText  := "BEAR ACTIVE (SHORT ONLY)"
+        regimeColor := color.red
+
+    int totalTr = strategy.closedtrades
+    int winTr   = strategy.wintrades
+    float winRate = totalTr > 0 ? (winTr / totalTr) * 100.0 : 0.0
+    float netPnL  = strategy.netprofit
+
+    table.cell(dash, 0, 0, "Predator V4 Omni", bgcolor=color.navy, text_color=color.white)
+    table.cell(dash, 1, 0, "STATUS", bgcolor=color.navy, text_color=color.white)
+
+    table.cell(dash, 0, 1, "Regime Filter", text_color=color.white)
+    table.cell(dash, 1, 1, regimeText, bgcolor=regimeColor, text_color=color.white)
+
+    table.cell(dash, 0, 2, "Daily Bias", text_color=color.white)
+    table.cell(dash, 1, 2, isMacroBull ? "BULLISH (>20 EMA)" : "BEARISH (<20 EMA)", text_color=isMacroBull ? color.green : color.red)
+
+    table.cell(dash, 0, 3, "ADX Momentum", text_color=color.white)
+    table.cell(dash, 1, 3, str.tostring(adxVal, "#.##") + (isTrending ? " (Trending)" : " (Chop)"), text_color=isTrending ? color.green : color.orange)
+
+    table.cell(dash, 0, 4, "Win Rate", text_color=color.white)
+    table.cell(dash, 1, 4, str.tostring(winRate, "#.##") + "% (" + str.tostring(winTr) + "/" + str.tostring(totalTr) + ")", text_color=color.aqua)
+
+    table.cell(dash, 0, 5, "Total Closed Trades", text_color=color.white)
+    table.cell(dash, 1, 5, str.tostring(totalTr), text_color=color.white)
+
+    table.cell(dash, 0, 6, "Net PnL", text_color=color.white)
+    table.cell(dash, 1, 6, (netPnL >= 0 ? "+Rs." : "-Rs.") + str.tostring(math.abs(netPnL), "#.##"), bgcolor=netPnL >= 0 ? color.darkgreen : color.darkred, text_color=color.white)

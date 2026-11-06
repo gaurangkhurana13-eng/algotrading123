@@ -1,0 +1,400 @@
+import pickle
+import pandas as pd
+import numpy as np
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(r"C:\Users\admin\.gemini\antigravity\scratch\new_trade")
+sys.path.insert(0, str(ROOT_DIR / "strategies"))
+from framework import calc_dhan_charges, calculate_atr
+
+# Load Data Pools
+with open(ROOT_DIR / "data" / "universe_78_15m_1y.pkl", "rb") as f:
+    univ = pickle.load(f)
+with open(ROOT_DIR / "data" / "unseen_high_beta_10_15m_1y.pkl", "rb") as f:
+    d_beta = pickle.load(f)
+with open(ROOT_DIR / "data" / "unseen_10_15m_1y.pkl", "rb") as f:
+    d_unseen = pickle.load(f)
+
+all_pools = {}
+all_pools.update(univ)
+all_pools.update(d_beta)
+all_pools.update(d_unseen)
+
+tickers = [
+    "PCJEWELLER.NS", "RPOWER.NS", "DELTACORP.NS", "RITES.NS",
+    "IDEA.NS", "MTNL.NS", "ZEEL.NS", "UTKARSHBNK.NS", "IFCI.NS", "NCC.NS",
+    "TEXRAIL.NS", "JPPOWER.NS", "PTC.NS", "NIACL.NS"
+]
+
+def compute_vwap_shifted(df: pd.DataFrame) -> pd.Series:
+    df_temp = df.copy()
+    df_temp["_date"] = df_temp.index.date
+    tp = (df_temp["high"] + df_temp["low"] + df_temp["close"]) / 3.0
+    df_temp["_tpv"] = tp * df_temp["volume"]
+    cum_tpv = df_temp.groupby("_date")["_tpv"].cumsum()
+    cum_vol = df_temp.groupby("_date")["volume"].cumsum()
+    return (cum_tpv / (cum_vol + 1e-9)).shift(1)
+
+def compute_er10(series_close: pd.Series) -> pd.Series:
+    change = (series_close - series_close.shift(10)).abs()
+    volatility = series_close.diff().abs().rolling(10).sum()
+    return change / (volatility + 1e-9)
+
+data_map = {}
+for t in tickers:
+    if t not in all_pools:
+        continue
+    df = all_pools[t].copy()
+    c = df["close"]
+    h = df["high"]
+    l = df["low"]
+    v = df["volume"]
+    atr14 = calculate_atr(df, 14)
+    ema50 = c.ewm(span=50).mean()
+    ema110 = c.ewm(span=110).mean()
+    vwap_lag = compute_vwap_shifted(df)
+    v_sma20 = v.rolling(20).mean()
+    rvol = v / (v_sma20 + 1e-9)
+    er10 = compute_er10(c)
+    
+    delta = c.diff()
+    gain = delta.clip(lower=0).rolling(7).mean()
+    loss = (-delta.clip(upper=0)).rolling(7).mean()
+    rsi7 = 100 - (100 / (1 + gain / (loss + 1e-9)))
+    
+    macd = c.ewm(span=12).mean() - c.ewm(span=26).mean()
+    sig = macd.ewm(span=9).mean()
+    macd_cross_up = (macd > sig) & (macd.shift(1) <= sig.shift(1))
+    
+    tr = np.maximum(h - l, np.maximum((h - c.shift(1)).abs(), (l - c.shift(1)).abs()))
+    atr10 = tr.rolling(10).mean()
+    up_move = h - h.shift(1)
+    down_move = l.shift(1) - l
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
+    plus_di = 100 * (pd.Series(plus_dm, index=df.index).rolling(10).mean() / (atr10 + 1e-9))
+    minus_di = 100 * (pd.Series(minus_dm, index=df.index).rolling(10).mean() / (atr10 + 1e-9))
+    dx = 100 * (abs(plus_di - minus_di) / (plus_di + minus_di + 1e-9))
+    adx = dx.rolling(10).mean()
+    
+    entry_cond = (
+        macd_cross_up & (macd > 0) &
+        (c > ema50) & (c > ema110) &
+        (c > vwap_lag) &
+        (rsi7 > 50.0) & (adx > 18.0) & (plus_di > minus_di) &
+        (c <= 450.0) & (c >= 10.0)
+    )
+    
+    data_map[t] = {
+        "df": df, "c": c, "h": h, "l": l, "v": v, "atr14": atr14,
+        "rsi7": rsi7, "vwap_lag": vwap_lag, "rvol": rvol, "er10": er10,
+        "entry_cond": entry_cond
+    }
+
+all_ts = sorted(list(set().union(*[d["df"].index for d in data_map.values()])))
+slippage = 0.0005
+hard_sl_mult = 0.90
+trail_dist = 0.28
+climax_dist = 0.20
+ratchet_dist = 0.40
+alpha_streak = 0.082
+beta_streak = 0.035
+
+def run_simulation(mode_name, enable_pyramid=False, single_risk_cap=110.0, use_gate_v2_risk=False):
+    positions = {}
+    trades = []
+    daily_traded = {}
+    last_exit_times = set()
+    peak_wallet = 500.0
+    max_dd_val = 0.0
+    max_dd_pct = 0.0
+    max_margin_used = 0.0
+    
+    for ts in all_ts:
+        if ts.weekday() >= 5:
+            continue
+        cur_date = ts.date()
+        if cur_date not in daily_traded:
+            daily_traded[cur_date] = set()
+        t_time = ts.time()
+        t_time_int = t_time.hour * 100 + t_time.minute
+        
+        # 1. Manage Active Positions
+        for ticker in list(positions.keys()):
+            p = positions[ticker]
+            t_data = data_map[ticker]
+            if ts not in t_data["df"].index:
+                continue
+            row = t_data["df"].loc[ts]
+            cur_c, cur_h, cur_l = row["close"], row["high"], row["low"]
+            cur_rsi = t_data["rsi7"].loc[ts]
+            cur_vwap = t_data["vwap_lag"].loc[ts]
+            cur_v = row["volume"]
+            
+            p["bars_held"] += 1
+            p["high_seen"] = max(p["high_seen"], cur_h)
+            mfe_atr = (p["high_seen"] - p["entry_p"]) / p["entry_atr"] if p["entry_atr"] > 0 else 0.0
+            
+            # House-Money Pyramid
+            if enable_pyramid and p["qty_pyr"] == 0 and mfe_atr >= 1.25 and t_time_int <= 1415:
+                q2 = int(p["qty"] * 0.60)
+                if cur_v > 0:
+                    q2 = min(q2, int(0.045 * cur_v))
+                if q2 >= 1:
+                    p["qty_pyr"] = q2
+                    p["pyr_entry_p"] = cur_c * (1.0 + slippage)
+                    p["active_sl"] = max(p["active_sl"], round(p["entry_p"] + 0.40 * p["entry_atr"], 2))
+            
+            # 3-Phase Lifecycle
+            if mfe_atr >= 2.50 or (mfe_atr >= 1.25 and t_time_int >= 1415):
+                p["active_sl"] = max(p["active_sl"], round(p["high_seen"] - (climax_dist * p["entry_atr"]), 2))
+                p["phase"] = 3
+            elif mfe_atr >= 1.15:
+                p["active_sl"] = max(p["active_sl"], round(p["high_seen"] - (trail_dist * p["entry_atr"]), 2))
+                p["phase"] = 2
+            elif mfe_atr >= 0.85:
+                p["active_sl"] = max(p["active_sl"], round(p["entry_p"] + (ratchet_dist * p["entry_atr"]), 2))
+                p["phase"] = 1
+                p["is_risk_free"] = True
+
+            # Stop hit
+            if cur_l <= p["active_sl"]:
+                raw_exit = p["active_sl"] * (1.0 - slippage)
+                exit_p = round(max(cur_l, min(cur_h, raw_exit)), 2)
+                tot_qty = p["qty"] + p["qty_pyr"]
+                buy_cost = (p["entry_p"] * p["qty"]) + (p["pyr_entry_p"] * p["qty_pyr"])
+                sell_val = exit_p * tot_qty
+                gross = round(sell_val - buy_cost, 2)
+                chg = round(calc_dhan_charges(p["entry_p"], exit_p, tot_qty, is_intraday=True), 2)
+                net = round(gross - chg, 2)
+                trades.append({
+                    "symbol": ticker, "entry_p": p["entry_p"], "exit_p": exit_p, "qty": tot_qty,
+                    "gross_pnl": gross, "chg": chg, "net_pnl": net, "pyr": p["qty_pyr"] > 0,
+                    "bars": p["bars_held"], "exit_reason": "STOP"
+                })
+                last_exit_times.add(ts)
+                del positions[ticker]
+                continue
+                
+            # Stagnation scratch
+            if p["bars_held"] >= 3 and mfe_atr < 0.40 and cur_c < p["entry_p"] and (cur_rsi < 46.0 or cur_c < cur_vwap):
+                raw_exit = cur_c * (1.0 - slippage)
+                exit_p = round(max(cur_l, min(cur_h, raw_exit)), 2)
+                tot_qty = p["qty"] + p["qty_pyr"]
+                buy_cost = (p["entry_p"] * p["qty"]) + (p["pyr_entry_p"] * p["qty_pyr"])
+                gross = round((exit_p * tot_qty) - buy_cost, 2)
+                chg = round(calc_dhan_charges(p["entry_p"], exit_p, tot_qty, is_intraday=True), 2)
+                net = round(gross - chg, 2)
+                trades.append({
+                    "symbol": ticker, "entry_p": p["entry_p"], "exit_p": exit_p, "qty": tot_qty,
+                    "gross_pnl": gross, "chg": chg, "net_pnl": net, "pyr": False,
+                    "bars": p["bars_held"], "exit_reason": "SCRATCH"
+                })
+                last_exit_times.add(ts)
+                del positions[ticker]
+                continue
+                
+            # 14:45 EOD Square-off
+            if t_time >= pd.Timestamp("14:45").time():
+                raw_exit = cur_c * (1.0 - slippage)
+                exit_p = round(max(cur_l, min(cur_h, raw_exit)), 2)
+                tot_qty = p["qty"] + p["qty_pyr"]
+                buy_cost = (p["entry_p"] * p["qty"]) + (p["pyr_entry_p"] * p["qty_pyr"])
+                gross = round((exit_p * tot_qty) - buy_cost, 2)
+                chg = round(calc_dhan_charges(p["entry_p"], exit_p, tot_qty, is_intraday=True), 2)
+                net = round(gross - chg, 2)
+                trades.append({
+                    "symbol": ticker, "entry_p": p["entry_p"], "exit_p": exit_p, "qty": tot_qty,
+                    "gross_pnl": gross, "chg": chg, "net_pnl": net, "pyr": False,
+                    "bars": p["bars_held"], "exit_reason": "EOD_1445"
+                })
+                last_exit_times.add(ts)
+                del positions[ticker]
+                continue
+
+        # Sizing & Sourcing New Entries
+        ek = 500.0 + sum(t["net_pnl"] for t in trades)
+        peak_wallet = max(peak_wallet, ek)
+        cur_dd = peak_wallet - ek
+        cur_dd_pct = (cur_dd / peak_wallet) * 100.0 if peak_wallet > 0 else 0.0
+        max_dd_val = max(max_dd_val, cur_dd)
+        max_dd_pct = max(max_dd_pct, cur_dd_pct)
+        
+        consec_losses = 0
+        for t in reversed(trades):
+            if t["net_pnl"] < 0:
+                consec_losses += 1
+            else:
+                break
+                
+        dd_pct = (peak_wallet - ek) / max(peak_wallet, 500.0)
+        
+        if len(positions) >= 1 or ts in last_exit_times or t_time < pd.Timestamp("09:20").time() or t_time > pd.Timestamp("14:15").time():
+            continue
+            
+        current_notional = sum(p["entry_p"] * p["qty"] for p in positions.values())
+        avail_margin = (0.95 * ek) - (current_notional / 5.0)
+        if avail_margin < 10.0:
+            continue
+        avail_notional = avail_margin * 5.0
+        
+        if consec_losses >= 2 or (ek > 2500.0 and dd_pct > 0.16):
+            alpha, beta = 0.015, 0.010
+        elif consec_losses == 1:
+            alpha, beta = 0.035, 0.020
+        else:
+            alpha, beta = alpha_streak, beta_streak
+            
+        if use_gate_v2_risk:
+            # Gate V2 continuous rule: R = min(0.09 * ek, 258.0)
+            raw_r = min(0.09 * ek, 258.0)
+        else:
+            if ek <= 2500.0:
+                raw_r = 14.0 + (alpha * max(0.0, ek - 500.0))
+            else:
+                raw_r = 14.0 + (alpha * 2000.0) + (beta * (ek - 2500.0))
+            raw_r = min(raw_r, single_risk_cap)
+            
+        # Scan candidates
+        candidates = []
+        for ticker in tickers:
+            if ticker in positions or ticker in daily_traded[cur_date]:
+                continue
+            t_data = data_map[ticker]
+            if ts not in t_data["df"].index:
+                continue
+            idx = t_data["df"].index.get_loc(ts)
+            if idx < 100 or not t_data["entry_cond"].iloc[idx]:
+                continue
+            cur_c = t_data["c"].iloc[idx]
+            cur_h = t_data["h"].iloc[idx]
+            cur_l = t_data["l"].iloc[idx]
+            cur_v = t_data["v"].iloc[idx]
+            entry_atr = max(t_data["atr14"].iloc[idx], 0.05)
+            conviction_score = t_data["rvol"].iloc[idx] * t_data["er10"].iloc[idx]
+            candidates.append({
+                "ticker": ticker, "c": cur_c, "h": cur_h, "l": cur_l, "v": cur_v,
+                "atr": entry_atr, "score": conviction_score
+            })
+            
+        if not candidates:
+            continue
+            
+        candidates.sort(key=lambda x: x["score"], reverse=True)
+        best = candidates[0]
+        ticker = best["ticker"]
+        entry_p = round(best["c"] * (1.0 + slippage), 2)
+        initial_sl = round(entry_p - (hard_sl_mult * best["atr"]), 2)
+        sl_dist = max(entry_p - initial_sl, 0.05)
+        
+        risk_qty = int(np.floor(raw_r / sl_dist))
+        margin_qty = int(np.floor(avail_notional / entry_p))
+        qty = max(1, min(risk_qty, margin_qty))
+        
+        # Check volume participation cap 4.5%
+        if best["v"] > 0:
+            qty = min(qty, int(0.045 * best["v"]))
+        if qty < 1:
+            qty = 1
+            
+        notional_entry = entry_p * qty
+        margin_needed = notional_entry / 5.0
+        max_margin_used = max(max_margin_used, margin_needed)
+        
+        positions[ticker] = {
+            "entry_p": entry_p, "qty": qty, "entry_atr": best["atr"], "initial_sl": initial_sl,
+            "active_sl": initial_sl, "phase": 0, "bars_held": 0, "high_seen": best["h"],
+            "entry_t": ts, "is_risk_free": False, "qty_pyr": 0, "pyr_entry_p": 0.0
+        }
+        daily_traded[cur_date].add(ticker)
+        
+    tdf = pd.DataFrame(trades)
+    wins = tdf[tdf["net_pnl"] > 0]
+    losses = tdf[tdf["net_pnl"] < 0]
+    be = tdf[tdf["net_pnl"] == 0]
+    
+    total_trades = len(tdf)
+    n_wins = len(wins)
+    n_losses = len(losses)
+    n_be = len(be)
+    wr = (n_wins / total_trades) * 100.0 if total_trades > 0 else 0.0
+    
+    gross_pnl = tdf["gross_pnl"].sum()
+    total_chg = tdf["chg"].sum()
+    net_pnl = tdf["net_pnl"].sum()
+    fin_wallet = 500.0 + net_pnl
+    
+    sum_win = wins["net_pnl"].sum()
+    sum_loss = abs(losses["net_pnl"].sum())
+    net_pf = sum_win / sum_loss if sum_loss > 0 else np.nan
+    gross_win = wins["gross_pnl"].sum()
+    gross_loss = abs(losses["gross_pnl"].sum())
+    gross_pf = gross_win / gross_loss if gross_loss > 0 else np.nan
+    
+    avg_win = wins["net_pnl"].mean() if n_wins > 0 else 0.0
+    avg_loss = losses["net_pnl"].mean() if n_losses > 0 else 0.0
+    avg_trade = tdf["net_pnl"].mean() if total_trades > 0 else 0.0
+    payoff_ratio = abs(avg_win / avg_loss) if avg_loss != 0 else np.nan
+    
+    best_win = tdf["net_pnl"].max()
+    worst_loss = tdf["net_pnl"].min()
+    
+    pyr_trades = tdf[tdf["pyr"] == True]
+    n_pyr = len(pyr_trades)
+    
+    # Max consecutive wins and losses
+    consec_w = 0
+    max_consec_w = 0
+    consec_l = 0
+    max_consec_l = 0
+    for pnl in tdf["net_pnl"]:
+        if pnl > 0:
+            consec_w += 1
+            max_consec_w = max(max_consec_w, consec_w)
+            consec_l = 0
+        elif pnl < 0:
+            consec_l += 1
+            max_consec_l = max(max_consec_l, consec_l)
+            consec_w = 0
+            
+    expectancy = (wr/100.0 * avg_win) + ((1.0 - wr/100.0) * avg_loss)
+    
+    return {
+        "model": mode_name,
+        "trades": total_trades,
+        "wins": n_wins,
+        "losses": n_losses,
+        "be": n_be,
+        "wr": wr,
+        "gross_pnl": gross_pnl,
+        "taxes": total_chg,
+        "net_pnl": net_pnl,
+        "final_wallet": fin_wallet,
+        "multiple": fin_wallet / 500.0,
+        "gross_pf": gross_pf,
+        "net_pf": net_pf,
+        "avg_win": avg_win,
+        "avg_loss": avg_loss,
+        "payoff": payoff_ratio,
+        "avg_trade": avg_trade,
+        "expectancy": expectancy,
+        "max_dd_val": max_dd_val,
+        "max_dd_pct": max_dd_pct,
+        "best_win": best_win,
+        "worst_loss": worst_loss,
+        "max_consec_w": max_consec_w,
+        "max_consec_l": max_consec_l,
+        "n_pyr": n_pyr,
+        "max_margin_used": max_margin_used
+    }
+
+print("Running all 4 variants...")
+res1 = run_simulation("V19.1 Baseline (No Pyramid)", enable_pyramid=False, single_risk_cap=110.0)
+res2 = run_simulation("V19.2 (Pyramid, Cap Rs 110)", enable_pyramid=True, single_risk_cap=110.0)
+res3 = run_simulation("V19.3 (Pyramid, Cap Rs 140)", enable_pyramid=True, single_risk_cap=140.0)
+res4 = run_simulation("V19.4 (Pyramid, Gate V2 9% Scaling)", enable_pyramid=True, use_gate_v2_risk=True)
+
+df_res = pd.DataFrame([res1, res2, res3, res4])
+print(df_res.to_string())
+df_res.to_csv(ROOT_DIR / "v19_variants_comparison.csv", index=False)

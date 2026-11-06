@@ -1,0 +1,2 @@
+timestamp,ticker,sector,sub_sector,direction,confidence,mc_win_prob,mc_expected_ev,entry_price,exit_price,qty,position_exposure,half_kelly_risk_budget,gross_pnl,charges,net_pnl,capital,winner,realized_return_pct
+2026-10-06 11:30:00+05:30,MOREPENLAB,GENERAL,GENERAL,BUY,54.24,51.4,0.0,142.93,142.9,8,1143.45,21.99,-0.25,1.22,-1.47,498.53,False,0.03

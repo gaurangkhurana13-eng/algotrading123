@@ -1,0 +1,93 @@
+====================================================================================================
+ FORENSIC STRATEGY AUDIT | V7 | 2026-10-29 14:01
+====================================================================================================
+   pine           v7.pine (08f04bc3a9ce)
+   results        results.txt (299ef3e5784f)
+   intraday       trades_intraday.csv (4e187c319eda)
+   swing          trades_swing.csv (feccc2586eab)
+   run            run_v7.py (e26033f2ba6d)
+   bars:pcjeweller pcjeweller_15m_1y.pkl (5c22548fb08a)
+   bars:rpower    rpower_15m_1y.pkl (47b264c2f323)
+   bars:idea      idea_15m_1y.pkl (daf1846e1512)
+   bars:ujjivansfb ujjivansfb_15m_1y.pkl (f20a8818bfd1)
+   bars:mtnl      mtnl_15m_1y.pkl (906b4a7afd5d)
+   bars:hcc       hcc_15m_1y.pkl (d27ccdeebdd1)
+----------------------------------------------------------------------------------------------------
+ #  CHECK                                       STATUS
+ 1  File existence & schema                     [PASS]
+ 2  Raw-bar grounding & price realism           [PASS]
+ 3  Lookahead & same-bar execution              [WARN]
+ 4  Dhan charges & PnL recalculation            [PASS]
+ 5  Margin & risk-cap compliance                [PASS]
+ 6  100% intraday square-off                    [PASS]
+ 7  CSV vs results.txt reconciliation           [PASS]
+ 8  Pine Script audit                           [PASS]
+ 9  Statistical plausibility                    [WARN]
+ 10 Report & exit code                          [WARN]
+----------------------------------------------------------------------------------------------------
+ DETAIL
+  Check 1: File existence & schema
+    [PASS] trades_intraday.csv: 52 trades, all 8 mandatory columns valid
+    [PASS] trades_swing.csv: 80 trades, all 8 mandatory columns valid
+  Check 2: Raw-bar grounding & price realism
+    [PASS] [intraday] all 52 entry_price values lie within real bar ranges
+    [PASS] [intraday] all 52 exit_price values lie within real bar ranges
+    [PASS] [intraday] entries show slippage evidence (~0.05% adverse on 35% of trades)
+    [PASS] [swing] all 80 entry_price values lie within real bar ranges
+    [PASS] [swing] all 80 exit_price values lie within real bar ranges
+    [PASS] [swing] entries show slippage evidence (~0.05% adverse on 36% of trades)
+  Check 3: Lookahead & same-bar execution
+    [WARN] VWAP computed without .shift(1) - signal on bar i must not use bar-i VWAP unless the fill is bar i+1 open
+    [PASS] run script: no hard lookahead constructs (see warnings above)
+    [PASS] entry placement within bar looks unbiased (mean favourable position 0.24)
+    [PASS] no same-bar (open+close in one bar) trades
+  Check 4: Dhan charges & PnL recalculation
+    [PASS] [intraday] price convention: CSV prices already include slippage
+    [PASS] [intraday] charges match Dhan schedule on all 52 trades (max diff Rs 0.005, mean 0.002)
+    [PASS] [intraday] net_pnl reproduces from prices, shares and charges on all 52 trades
+    [PASS] [swing] price convention: CSV prices already include slippage
+    [PASS] [swing] charges match Dhan schedule on all 80 trades (max diff Rs 0.005, mean 0.003)
+    [PASS] [swing] net_pnl reproduces from prices, shares and charges on all 80 trades
+  Check 5: Margin & risk-cap compliance
+    [PASS] [intraday] worst single loss Rs -13.92 within Rs 15.50 cap
+    [PASS] [intraday] max notional Rs 2,449.72 <= Rs 2,450
+    [PASS] [intraday] no overlapping positions beyond the margin limit
+    [PASS] [intraday] margin covered at every entry (min equity Rs 480.40)
+    [PASS] [swing] worst single loss Rs -15.47 within Rs 15.50 cap
+  Check 6: 100% intraday square-off
+    [PASS] all 52 trades flat same day, exits <= 15:10, entries inside session
+  Check 7: CSV vs results.txt reconciliation
+    [PASS] [intraday] trades: results.txt 52.00 == CSV 52.00
+    [PASS] [intraday] wins: results.txt 34.00 == CSV 34.00
+    [PASS] [intraday] losses: results.txt 18.00 == CSV 18.00
+    [PASS] [intraday] win_rate: results.txt 65.38 == CSV 65.38
+    [PASS] [intraday] net: results.txt 311.93 == CSV 311.93
+    [PASS] [intraday] pf: results.txt 2.37 == CSV 2.37
+    [PASS] [intraday] avg_win: results.txt 15.85 == CSV 15.85
+    [PASS] [intraday] avg_loss: results.txt -12.61 == CSV -12.61
+    [PASS] [swing] trades: results.txt 80.00 == CSV 80.00
+    [PASS] [swing] wins: results.txt 33.00 == CSV 33.00
+    [PASS] [swing] losses: results.txt 47.00 == CSV 47.00
+    [PASS] [swing] win_rate: results.txt 41.25 == CSV 41.25
+    [PASS] [swing] net: results.txt 183.42 == CSV 183.42
+    [PASS] [swing] pf: results.txt 1.59 == CSV 1.59
+    [PASS] [swing] avg_win: results.txt 15.00 == CSV 15.00
+    [PASS] [swing] avg_loss: results.txt -6.63 == CSV -6.63
+  Check 8: Pine Script audit
+    [PASS] Pine header //@version=6
+    [PASS] contains strategy.entry and strategy.exit/close commands
+    [PASS] commission: cash_per_order, value 1.50
+    [PASS] slippage set (1 ticks)
+  Check 9: Statistical plausibility
+    [PASS] [intraday] n=52, WR 65.4% (95% lower bound 51.8%), PF 2.37, avg loss Rs -12.61, max DD 10%
+    [WARN] [swing] per-trade expectancy t-stat 1.34 (< 1.65): edge indistinguishable from noise
+    [WARN] [swing] edge decays: PF 2.70 in first half -> 0.93 in second half (curve-fit signature)
+    [WARN] [swing] n=80, WR 41.2% (95% lower bound 31.1%), PF 1.59, max DD 14%
+----------------------------------------------------------------------------------------------------
+ INTRADAY (recomputed from CSV): trades 52 | WR 65.4% | net Rs 311.93 | PF 2.37 | avg win Rs 15.85 | avg loss Rs -12.61
+----------------------------------------------------------------------------------------------------
+ SWING (recomputed from CSV): trades 80 | WR 41.2% | net Rs 183.42 | PF 1.59 | avg win Rs 15.00 | avg loss Rs -6.63
+====================================================================================================
+ VERDICT: [WARN]  V7: 4 warning(s), no failures
+====================================================================================================
+

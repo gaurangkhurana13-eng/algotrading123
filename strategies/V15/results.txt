@@ -1,0 +1,14 @@
+----------------------------------------
+INTRADAY
+----------------------------------------
+Total Trades: 189
+Wins: 108
+Losses: 81
+Win Rate: 57.14%
+Gross Profit: Rs 1601.99
+Gross Loss: Rs 713.90
+Net Profit: Rs 888.09
+Profit Factor: 2.24
+Avg Win: Rs 14.83
+Avg Loss: Rs -8.81
+Max Drawdown: 14.40%

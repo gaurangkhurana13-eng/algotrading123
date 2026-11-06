@@ -1,0 +1,27 @@
+{
+  "version": "V25",
+  "description": "Asymmetric Quadratic MFE Ratchet & Continuous Stagnation Time-Decay Engine",
+  "metrics": {
+    "trades": 31,
+    "wins": 8,
+    "losses": 23,
+    "win_rate": 25.81,
+    "avg_win": 15.28,
+    "avg_loss": -14.57,
+    "payoff_ratio": 1.05,
+    "profit_factor": 0.36,
+    "net_pnl": -212.97,
+    "final_capital": 287.03,
+    "roi_pct": -42.59,
+    "ruin_prob_50pct": 37.59,
+    "expected_max_dd": 45.64
+  },
+  "artifacts": {
+    "trades_csv": "trades/v25_trades.csv",
+    "rejected_csv": "trades/v25_rejected_candidates.csv",
+    "pre_trade_decisions_jsonl": "monte_carlo/pre_trade_decisions.jsonl",
+    "global_mc_json": "monte_carlo/global_monte_carlo.json",
+    "performance_chart": "reports/v25_performance.png",
+    "audit_report": "reports/V25_FINAL_REPORT.md"
+  }
+}

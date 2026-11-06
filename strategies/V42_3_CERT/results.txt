@@ -1,0 +1,9 @@
+Total Trades: 24
+Win Rate: 41.67%
+Net Profit: Rs 45.97
+Profit Factor: 1.45
+Max Drawdown: 9.59%
+Average Win: Rs 14.87
+Average Loss: Rs -7.34
+Largest Win: Rs 73.60
+Largest Loss: Rs -30.73

@@ -1,0 +1,7 @@
+V39_1_2019 Results:
+Trades: 35
+Win Rate: 37.1%
+Net PnL: Rs -114.17
+Final Capital: Rs 385.83
+Profit Factor: 0.56
+Max Drawdown: 24.3%

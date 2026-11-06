@@ -1,0 +1,36 @@
+{
+  "intraday": {
+    "num_simulations": 10000,
+    "sample_trades_count": 52,
+    "initial_capital": 500.0,
+    "ruin_risk_20pct_loss": 1.79,
+    "ruin_risk_50pct_loss": 0.0,
+    "median_terminal_equity": 803.17,
+    "p5_terminal_equity_worst": 560.93,
+    "p95_terminal_equity_best": 1097.57,
+    "p50_max_drawdown_inr": 57.12,
+    "p95_max_drawdown_inr": 114.11,
+    "p99_max_drawdown_inr": 148.43,
+    "p50_max_drawdown_pct": 8.75,
+    "p95_max_drawdown_pct": 19.4,
+    "p99_max_drawdown_pct": 25.98,
+    "stress_test_profitable_pct": 86.28
+  },
+  "swing": {
+    "num_simulations": 10000,
+    "sample_trades_count": 76,
+    "initial_capital": 500.0,
+    "ruin_risk_20pct_loss": 0.06,
+    "ruin_risk_50pct_loss": 0.0,
+    "median_terminal_equity": 631.02,
+    "p5_terminal_equity_worst": 513.08,
+    "p95_terminal_equity_best": 764.01,
+    "p50_max_drawdown_inr": 32.71,
+    "p95_max_drawdown_inr": 63.15,
+    "p99_max_drawdown_inr": 83.36,
+    "p50_max_drawdown_pct": 5.68,
+    "p95_max_drawdown_pct": 11.54,
+    "p99_max_drawdown_pct": 15.43,
+    "stress_test_profitable_pct": 82.59
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "version": "V34",
+  "system_name": "Bhavishya V34: Regime-Aware Z-Score, Extended 4.2x ATR Geometry & Stagnation Recycling",
+  "capital": 500.0,
+  "leverage": 5.0,
+  "max_notional_capital": 2450.0,
+  "max_executed_per_day": 5,
+  "max_concurrent_open": 1,
+  "max_trades_per_sector": 2,
+  "max_daily_loss": 25.0,
+  "sl_atr_mult": 1.5,
+  "ratchet_phase1_trigger": 1.60,
+  "ratchet_phase1_floor": 1.35,
+  "ratchet_phase2_trigger": 2.30,
+  "ratchet_phase2_floor": 1.95,
+  "ratchet_phase3_trigger": 3.20,
+  "ratchet_phase3_floor": 2.80,
+  "tp_ceiling": 4.20,
+  "slippage_per_leg": 0.0005,
+  "min_friction_atr_ratio": 0.0060,
+  "hard_cutoff_time": "13:30",
+  "eod_square_time": "15:05",
+  "min_atr_norm": 0.0060,
+  "hold_bars": 12,
+  "adx_min_trend": 20.0,
+  "dhan_brokerage_rate": 0.0003,
+  "dhan_max_brokerage": 20.0,
+  "z_conviction_min": 1.28,
+  "z_mult_floor": 1.0,
+  "rank_score_cutoff": 0.95,
+  "breadth_min_long": 0.55,
+  "r_net_cap": 15.50,
+  "walk_forward": {
+    "n_folds": 5,
+    "embargo_days": 2,
+    "min_train_days": 15,
+    "iterations": 350,
+    "depth": 5,
+    "l2_reg": 5.0,
+    "learning_rate": 0.04
+  },
+  "pre_trade_mc": {
+    "iterations": 2500,
+    "degrees_of_freedom": 5,
+    "seed": 42,
+    "min_mc_win_prob": 0.50
+  },
+  "global_monte_carlo": {
+    "iterations": 10000,
+    "seed": 42
+  }
+}

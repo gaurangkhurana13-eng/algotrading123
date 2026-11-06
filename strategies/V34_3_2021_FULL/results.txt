@@ -1,0 +1,9 @@
+Trades: 131
+Wins: 68
+Losses: 63
+Win Rate: 51.91%
+Net PnL: Rs 526.18
+Profit Factor: 1.37
+Avg Win: Rs 28.85
+Avg Loss: Rs -22.79
+Final Wallet: Rs 1026.18

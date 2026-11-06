@@ -1,0 +1,15 @@
+================================================================================
+  UNSEEN OUT-OF-SAMPLE WALK-FORWARD VALIDATION REPORT: V7
+================================================================================
+Cutoff Date Tested       : 2026-09-20 to October 28, 2026
+Total Unseen Trades      : 15
+Unseen Wins / Losses     : 7 Wins / 8 Losses
+Unseen Win Rate          : 46.67% (Threshold >= 60.0%)
+Unseen Net PnL           : Rs -8.05 (Threshold > 0.0)
+Unseen Profit Factor     : 0.92 (Threshold >= 1.70)
+Average Win              : Rs 12.52
+Average Loss             : Rs -11.96
+Max Drawdown             : Rs 81.07
+
+VALIDATION DECISION      : REJECTED (Failed Unseen Walk-Forward)
+================================================================================

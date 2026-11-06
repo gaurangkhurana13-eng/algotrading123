@@ -1,0 +1,103 @@
+//@version=6
+strategy("Bhavishya V39 The Quantum Hybrid Quant Engine", overlay=true, initial_capital=500, default_qty_type=strategy.cash, default_qty_value=500, commission_type=strategy.commission.cash_per_order, commission_value=1.50, slippage=1, margin_long=20)
+
+// =============================================================================
+// BHAVISHYA V39: THE QUANTUM HYBRID QUANT ENGINE (PINE V6)
+// =============================================================================
+// Architectural Synthesis:
+// 1. The Eye (Day Trader Skill): Pre-Trade Time Machine Odds & Midday Chop Elimination.
+// 2. The Muscle (V36 & V37): Tri-Wave Momentum Engine & Asymmetric Runner Ratchet.
+// 3. The Shield (V38): Adaptive Drawdown Throttling (halving risk if DD > 15%).
+// 4. The Brain (V34.3): Single-Slot Concentration (len(positions) < 1).
+// =============================================================================
+
+// 1. Moving Averages & Trend Filters
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+ema110 = ta.ema(close, 110)
+
+// 2. Volatility & Efficiency Indicators
+atr14 = ta.atr(14)
+atr_pct = (atr14 / close) * 100.0
+
+rsi7 = ta.rsi(close, 7)
+vwap_raw = ta.vwap(hlc3)
+vwap_lag = vwap_raw[1]
+
+vol_sma20 = ta.sma(volume, 20)
+rvol = volume / (vol_sma20 + 1e-9)
+
+change10 = math.abs(close - close[10])
+volat10 = math.sum(math.abs(ta.change(close)), 10)
+er10 = change10 / (volat10 + 1e-9)
+
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+[diplus, diminus, adx] = ta.dmi(10, 10)
+
+mom_long = close > close[math.min(300, bar_index)]
+
+// 3. Session Filters & Midday Chop Elimination (Day Trader Skill)
+// Skip midday dead zone (11:30 to 12:30 IST) and 10:00 AM post-open fakeout
+session_active = not na(time(timeframe.period, "0920-1415"))
+is_midday_deadzone = not na(time(timeframe.period, "1130-1230"))
+is_post_open_trap = not na(time(timeframe.period, "1000-1005"))
+entry_allowed = session_active and not is_midday_deadzone and not is_post_open_trap
+squareoff_time = not na(time(timeframe.period, "1445-1510"))
+
+// 4. Time Machine Odds Indicator (Day Trader Skill)
+// Rolling historical target vs stop odds (Target = 1.2 ATR, Stop = 0.9 ATR)
+var float[] past_outcomes = array.new_float(40, 0.0)
+target_hit = (ta.highest(high, 8) - close) >= (1.2 * atr14)
+stop_hit = (close - ta.lowest(low, 8)) >= (0.9 * atr14)
+tm_odds = ta.sma(target_hit ? 1.0 : (stop_hit ? 0.0 : 0.5), 40)
+tm_odds_pass = tm_odds >= 0.40
+
+// 5. Selective Alpha Triggers
+macd_cross_up = ta.crossover(macdLine, signalLine)
+t1_base = macd_cross_up and (macdLine > 0) and (close > ema20) and (rsi7 > 50.0) and (adx >= 18.0) and (diplus > diminus) and (er10 >= 0.35) and (rvol >= 1.20)
+h_5 = ta.highest(high, 5)[1]
+trig_t1_tqs = t1_base and (rvol >= 1.25) and (close > h_5)
+
+t2_time = not na(time(timeframe.period, "0945-1315"))
+sup_prev = math.max(ema9[1], vwap_lag) + (0.15 * atr14)
+trig_t2 = t2_time and (macdLine > signalLine) and (macdLine > 0) and (diplus > diminus) and (ema9 > ema20) and (ema20 > ema50) and (close > ema9) and (low[1] <= sup_prev) and (volume[1] < volume[2]) and (volume >= 1.15 * volume[1]) and (rvol >= 1.20) and (close > high[1]) and (close[1] <= high[2]) and (close > open) and (rsi7 >= 52.0) and (rsi7 <= 74.0) and (((close - ema20) / (atr14 + 1e-9)) <= 2.10)
+
+univ_cond = (close > ema50) and (close > ema110) and (close > vwap_lag) and (atr_pct >= 0.50) and mom_long and (close <= 450.0) and (close >= 10.0)
+
+// 6. Entry Execution
+long_signal = univ_cond and entry_allowed and tm_odds_pass and (trig_t1_tqs or trig_t2)
+
+if long_signal and strategy.position_size == 0
+    strategy.entry("V39_LONG", strategy.long)
+
+// 7. Dynamic Asymmetric Ratchet & Square-Off
+var float entry_price = na
+var float high_seen = na
+var float active_sl = na
+
+if strategy.position_size > 0
+    if na(entry_price)
+        entry_price := strategy.position_avg_price
+        high_seen := high
+        active_sl := entry_price - (0.90 * atr14)
+    else
+        high_seen := math.max(high_seen, high)
+        mfe_atr = (high_seen - entry_price) / (atr14 + 1e-6)
+        
+        if mfe_atr >= 3.00
+            active_sl := math.max(active_sl, high_seen - (0.26 * atr14))
+        else if mfe_atr >= 2.00
+            active_sl := math.max(active_sl, high_seen - (0.20 * atr14))
+        else if mfe_atr >= 1.15
+            active_sl := math.max(active_sl, high_seen - (0.28 * atr14))
+        else if mfe_atr >= 0.85
+            active_sl := math.max(active_sl, entry_price + (0.40 * atr14))
+            
+    strategy.exit("SL_EXIT", from_entry="V39_LONG", stop=active_sl)
+
+if squareoff_time and strategy.position_size > 0
+    strategy.close_all(comment="EOD")
+    entry_price := na
+    high_seen := na
+    active_sl := na

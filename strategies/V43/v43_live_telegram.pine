@@ -1,0 +1,83 @@
+//@version=6
+strategy("Bhavishya V43 Titan 15M Live Telegram", 
+         overlay=true, 
+         initial_capital=500, 
+         currency=currency.INR, 
+         commission_type=strategy.commission.cash_per_order, 
+         commission_value=1.50, 
+         slippage=1, 
+         pyramiding=0)
+
+// Parameters
+fastLength = 12
+slowLength = 26
+signalLength = 9
+ema9_len = 9
+ema20_len = 20
+ema50_len = 50
+
+[macdLine, signalLine, _] = ta.macd(close, fastLength, slowLength, signalLength)
+ema9 = ta.ema(close, ema9_len)
+ema20 = ta.ema(close, ema20_len)
+ema50 = ta.ema(close, ema50_len)
+atr14 = ta.atr(14)
+
+// Triggers
+macdCross = ta.crossover(macdLine, signalLine) and macdLine > 0 and close > ema20
+ma20Reclaim = low[1] < ema20[1] and close[1] <= ema20[1] and close > ema20 and macdLine > signalLine
+
+longCondition = (macdCross or ma20Reclaim) and close > ema50 and (time(timeframe.period, "0945-1415:1234567") != 0)
+
+var float entryPrice = na
+var float highSeen = na
+var int tradeShares = 0
+
+// Position Sizing: 5x MIS Leverage
+currentCapital = strategy.equity
+notionalPower  = currentCapital * 5.0
+tradeQty       = math.max(1, math.floor(notionalPower / close))
+
+if (longCondition and strategy.position_size == 0)
+    hardSL = close - (0.90 * atr14)
+    beTarget = close + (0.45 * atr14)
+    tradeVal = tradeQty * close
+    estFee = (math.min(20.0, tradeVal * 0.0003) * 2.0) + 1.20
+    
+    patternStr = ma20Reclaim ? "MA20 RECLAIM" : "MACD ZERO CROSS"
+    
+    alertMsg = "👑 [BHAVISHYA V43 TITAN 15M - ENTRY]\n" +
+               "📈 Stock: " + syminfo.ticker + "\n" +
+               "🟢 Action: BUY (Institutional MIS 5x)\n" +
+               "💰 Entry Price: ₹" + str.tostring(close, "#.##") + "\n" +
+               "🛑 Hard Stop Loss: ₹" + str.tostring(hardSL, "#.##") + "\n" +
+               "🔒 Breakeven Lock Target (+0.45 ATR): ₹" + str.tostring(beTarget, "#.##") + "\n" +
+               "⚡ 5x Trade Value: ₹" + str.tostring(tradeVal, "#.##") + " (" + str.tostring(tradeQty) + " shares)\n" +
+               "💸 Est. Dhan Charges: ₹" + str.tostring(estFee, "#.##") + "\n" +
+               "🎯 Pattern: " + patternStr + "\n" +
+               "⏰ Time: " + str.format_time(time, "HH:mm:ss", "Asia/Kolkata")
+               
+    alert(alertMsg, alert.freq_once_per_bar_close)
+    strategy.entry("V43 Long", strategy.long, qty=tradeQty)
+    entryPrice := close
+    tradeShares := tradeQty
+
+// Asymmetric Ratchet Exit
+if (strategy.position_size > 0)
+    highSeen := math.max(nz(highSeen, high), high)
+    mfe = highSeen - entryPrice
+    
+    if (mfe >= 0.85 * atr14)
+        strategy.exit("Lock 0.40 ATR", "V43 Long", stop=entryPrice + 0.40 * atr14)
+    else if (mfe >= 0.45 * atr14)
+        strategy.exit("BE Lock", "V43 Long", stop=entryPrice + 0.05 * atr14)
+    else
+        strategy.exit("Hard SL", "V43 Long", stop=entryPrice - 0.90 * atr14)
+else
+    entryPrice := na
+    highSeen := na
+    tradeShares := 0
+
+// Mandatory EOD Exit by 15:15
+isEOD = not na(time(timeframe.period, "1515-1530:1234567"))
+if (isEOD and strategy.position_size > 0)
+    strategy.close_all(comment="15:15 EOD Square-Off")

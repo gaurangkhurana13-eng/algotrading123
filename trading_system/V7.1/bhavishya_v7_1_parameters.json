@@ -1,0 +1,37 @@
+{
+  "model_name": "BHAVISHYA V7.1 (ASYMMETRIC SNIPER + PRE-TRADE MC GATE)",
+  "version": "v7_1_asymmetric_reality",
+  "created_at": "2026-10-27 13:53:23",
+  "broker": "Dhan (Intraday MIS)",
+  "trading_parameters": {
+    "initial_capital": 500.0,
+    "leverage": "5.0x",
+    "target_rule": "Entry + (2.4 * ATR)",
+    "stop_loss_rule": "Entry - (1.0 * ATR)",
+    "breakeven_trailing": "Trigger at +1.0 * ATR",
+    "max_risk_per_trade": "\u20b925.00",
+    "confidence_gate": ">= 70%",
+    "pre_trade_mc_sims": 2000
+  },
+  "performance_results": {
+    "initial_capital": 500.0,
+    "final_capital": 256.45,
+    "net_roi": "+-48.71%",
+    "total_trades": 62,
+    "wins": 10,
+    "losses": 52,
+    "win_rate": "16.1%",
+    "profit_factor": 0.57,
+    "avg_win": 31.76,
+    "avg_loss": -10.79,
+    "payoff_ratio": "2.94 : 1",
+    "total_dhan_fees_paid": 122.6
+  },
+  "global_monte_carlo": {
+    "ruin_probability_50pct": "58.43%",
+    "average_max_drawdown": "58.5%",
+    "p5_capital": 27.83,
+    "p50_capital": 250.92,
+    "p95_capital": 497.84
+  }
+}

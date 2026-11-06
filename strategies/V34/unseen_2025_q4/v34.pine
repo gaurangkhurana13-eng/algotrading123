@@ -1,0 +1,90 @@
+//@version=6
+strategy("Bhavishya V34 Multi-Wave Compounding Engine", overlay=true, initial_capital=500, default_qty_type=strategy.cash, default_qty_value=500, commission_type=strategy.commission.cash_per_order, commission_value=1.50, slippage=1, margin_long=20)
+
+// =============================================================================
+// BHAVISHYA V34 — CROSS-SECTIONAL REGIME-GATED MULTI-WAVE ENGINE (PINE V6)
+// =============================================================================
+
+// 1. Core Structural Indicators
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+ema110 = ta.ema(close, 110)
+
+atr14 = ta.atr(14)
+atr_pct = (atr14 / close) * 100.0
+
+rsi7 = ta.rsi(close, 7)
+vwap_raw = ta.vwap(hlc3)
+vwap_lag = vwap_raw[1]
+
+vol_sma20 = ta.sma(volume, 20)
+rvol = volume / (vol_sma20 + 1e-9)
+
+change10 = math.abs(close - close[10])
+volat10 = math.sum(math.abs(ta.change(close)), 10)
+er10 = change10 / (volat10 + 1e-9)
+
+mom_long = close > close[math.min(300, bar_index)]
+session_ok = not na(time(timeframe.period, "0920-1415"))
+squareoff_time = not na(time(timeframe.period, "1445-1510"))
+
+// Triggers
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+trig_t1 = ta.crossover(macdLine, signalLine) and (macdLine > 0) and (close > ema20) and (rsi7 > 50.0) and (er10 >= 0.35) and (rvol >= 1.20)
+
+// Trigger 2: Pullback Re-Accumulation
+sup_prev = math.max(ema9[1], vwap_lag[1]) + (0.15 * atr14)
+trig_t2 = (macdLine > signalLine) and (macdLine > 0) and (ema9 > ema20) and (ema20 > ema50) and (low[1] <= sup_prev) and (volume[1] < volume[2]) and (volume >= 1.15 * volume[1]) and (close > high[1]) and (close[1] <= high[2]) and (close > open) and (rsi7 >= 52.0) and (rsi7 <= 74.0) and (((close - ema20) / atr14) <= 2.10)
+
+// Trigger 3: Mid-Session Squeeze Box Breakout (10:45 to 13:45)
+box_h4 = ta.highest(high, 4)[1]
+box_l4 = ta.lowest(low, 4)[1]
+w4 = (box_h4 - box_l4) / (atr14 + 1e-9)
+time_t3 = not na(time(timeframe.period, "1045-1345"))
+trig_t3 = time_t3 and (w4 <= 1.55) and (box_l4 >= vwap_lag[1] - 0.10 * atr14) and (close > box_h4) and (close[1] <= box_h4) and (rvol >= 1.35) and (((close - low) / (high - low + 1e-6)) >= 0.65) and (macdLine >= signalLine) and (rsi7 >= 54.0) and (rsi7 <= 78.0)
+
+univ_cond = (close > ema50) and (close > ema110) and (close > vwap_lag) and (atr_pct >= 0.50) and mom_long and (close <= 450.0) and (close >= 10.0)
+
+entry_cond = session_ok and univ_cond and (trig_t1 or trig_t2 or trig_t3)
+
+var float active_sl = na
+var float high_seen = na
+var int bars_held = 0
+
+if (entry_cond and strategy.position_size == 0)
+    strategy.entry("Long", strategy.long)
+    active_sl := close - (0.90 * atr14)
+    high_seen := close
+    bars_held := 0
+
+if (strategy.position_size > 0)
+    bars_held := bars_held + 1
+    high_seen := math.max(high_seen, high[1])
+    mfe_atr = (high_seen - strategy.position_avg_price) / (atr14 + 1e-9)
+    
+    // 4-Bar Scratch Rule
+    if (bars_held >= 4 and mfe_atr < 0.40 and close < strategy.position_avg_price and (rsi7 < 46.0 or close < vwap_lag))
+        active_sl := math.max(active_sl, close)
+    
+    // Asymmetric Ratchet
+    if (mfe_atr >= 0.85 and mfe_atr < 1.15)
+        active_sl := math.max(active_sl, strategy.position_avg_price + (0.40 * atr14))
+    else if (mfe_atr >= 1.15 and mfe_atr < 2.00)
+        active_sl := math.max(active_sl, high_seen - (0.28 * atr14))
+    else if (mfe_atr >= 2.00 and mfe_atr < 3.00)
+        active_sl := math.max(active_sl, high_seen - (0.20 * atr14))
+    else if (mfe_atr >= 3.00)
+        is_climax = (rvol >= 2.60 and (high - close) / (high - low + 1e-6) >= 0.45) or (rsi7 >= 86.0) or (close < low[1] and close < ema9) or (mfe_atr >= 8.00)
+        if (is_climax)
+            active_sl := math.max(active_sl, high_seen - (0.08 * atr14))
+        else
+            active_sl := math.max(active_sl, math.max(high_seen - (0.26 * atr14), low[1] - (0.08 * atr14)))
+            
+    if (mfe_atr >= 0.85 and close < ema9 and rsi7 < 55.0)
+        active_sl := active_sl + (0.05 * atr14)
+
+    strategy.exit("Exit Long", "Long", stop=active_sl)
+
+if (squareoff_time)
+    strategy.close_all("EOD")

@@ -1,0 +1,16 @@
+================================================================================
+V15 MODE B UNIFIED COMPOUNDED WALLET SUMMARY (TOP 10 LEADERS)
+================================================================================
+Starting Capital        : Rs 500.00
+Final Realized Equity   : Rs 4936.23 (+887.25% ROI / 9.87x)
+Peak High-Water Mark    : Rs 5045.56 (+909.11% ROI)
+Total Executed Trades   : 202 (Intraday: 189, Swing: 13)
+Wins / Losses           : 112 Wins / 90 Losses
+Win Rate                : 55.45%
+Profit Factor           : 3.04
+Gross Profit            : Rs 8385.89
+Gross Loss              : Rs 2759.40
+Net Realized Profit     : +Rs 4436.23
+Avg Win / Avg Loss      : Rs 68.71 / Rs -36.21
+Max Drawdown from Peak  : 26.48%
+================================================================================

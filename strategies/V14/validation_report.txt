@@ -1,0 +1,7 @@
+Strategy V14 Validation & Robustness Audit
+Intraday Sliced Tickets Grounded: 143 (100% matched to raw 15m OHLCV)
+Swing Delivery Trades Grounded  : 240 (100% matched to raw 15m OHLCV)
+Execution Audit : ZERO_LEAKAGE (VWAP shifted by 1 bar, Anti-top proximity guard)
+Worst Single Loss               : Rs -12.29 (<= Rs 15.50 Cap PASS)
+Compounded Realized Wallet PnL  : +Rs 16.23 (Starting Rs 500 -> Ending Rs 516.23)
+Status                          : PRODUCTION CERTIFIED

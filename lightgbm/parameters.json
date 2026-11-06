@@ -1,0 +1,42 @@
+{
+  "model_type": "LightGBM",
+  "version": "Phase 2 Base",
+  "num_classes": 3,
+  "class_mapping": {"0": "DOWN", "1": "FLAT", "2": "UP"},
+  "timeframe": "5m",
+  "data_period": "60d",
+  "stock_count": 44,
+  "features_count": 37,
+  "hyperparameters": {
+    "n_estimators": 570,
+    "learning_rate": 0.08930274585407648,
+    "max_depth": 10,
+    "num_leaves": 111,
+    "min_child_samples": 63,
+    "subsample": 0.6862387779526721,
+    "colsample_bytree": 0.9989300688203024,
+    "reg_alpha": 0.09250145386280544,
+    "reg_lambda": 4.498682692251446,
+    "class_weight": "balanced"
+  },
+  "strategy_rules": {
+    "starting_capital": 500.0,
+    "leverage": 5.0,
+    "max_purchasing_power": 2500.0,
+    "holding_period_bars": 3,
+    "holding_period_minutes": 15,
+    "confidence_threshold": 0.80,
+    "adx_min": 20,
+    "rvol_min": 0.0,
+    "daily_sniper_cap": 2
+  },
+  "performance": {
+    "trades": 60,
+    "win_rate_pct": 55.0,
+    "net_pnl": 193.61,
+    "groww_charges": 223.26,
+    "profit_factor": 1.68,
+    "roi_pct": 38.72,
+    "final_capital": 693.61
+  }
+}

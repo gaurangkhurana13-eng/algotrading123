@@ -1,0 +1,80 @@
+//@version=6
+strategy("Bhavishya V31 Master Compounding Engine", overlay=true, initial_capital=500, default_qty_type=strategy.cash, default_qty_value=500, commission_type=strategy.commission.cash_per_order, commission_value=1.50, slippage=1, margin_long=20)
+
+// =============================================================================
+// BHAVISHYA V31 — MASTER COMPOUNDING ENGINE (PINE SCRIPT V6)
+// =============================================================================
+
+// 1. Indicators
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+ema110 = ta.ema(close, 110)
+
+atr14 = ta.atr(14)
+atr_pct = (atr14 / close) * 100.0
+
+rsi7 = ta.rsi(close, 7)
+vwap_raw = ta.vwap(hlc3)
+vwap_lag = vwap_raw[1]
+
+vol_sma20 = ta.sma(volume, 20)
+rvol = volume / (vol_sma20 + 1e-9)
+
+change10 = math.abs(close - close[10])
+volat10 = math.sum(math.abs(ta.change(close)), 10)
+er10 = change10 / (volat10 + 1e-9)
+
+low2 = math.min(low, low[1])
+high_5 = ta.highest(high, 5)[1]
+lookback = math.min(300, bar_index)
+mom_long = close > close[lookback]
+
+session_ok = not na(time(timeframe.period, "0920-1415"))
+squareoff_time = not na(time(timeframe.period, "1445-1510"))
+
+entry_cond = (
+     session_ok and
+     (close > ema50) and (close > ema110) and (close > ema9) and
+     (close > vwap_lag * 1.0010) and
+     (er10 >= 0.32) and
+     (rsi7 >= 48.0) and (rsi7 <= 75.0) and
+     (rvol >= 1.20) and
+     (atr_pct >= 0.45) and
+     mom_long and
+     (close <= 450.0) and (close >= 10.0)
+ )
+
+var float active_sl = na
+var float high_seen = na
+
+if (entry_cond and strategy.position_size == 0)
+    strategy.entry("Long", strategy.long)
+    active_sl := close - (0.85 * atr14)
+    high_seen := high
+
+if (strategy.position_size > 0)
+    high_seen := math.max(high_seen, high)
+    mfe_atr = (high_seen - strategy.position_avg_price) / atr14
+    
+    float high_ratchet = na
+    if mfe_atr >= 4.0
+        high_ratchet := high_seen - (0.25 * atr14)
+    else if mfe_atr >= 3.0
+        high_ratchet := high_seen - (0.35 * atr14)
+    else if mfe_atr >= 2.0
+        high_ratchet := high_seen - (0.45 * atr14)
+    else if mfe_atr >= 1.20
+        high_ratchet := strategy.position_avg_price + (0.35 * atr14)
+    else if mfe_atr >= 0.75
+        high_ratchet := strategy.position_avg_price
+    else
+        high_ratchet := strategy.position_avg_price - (0.85 * atr14)
+        
+    active_sl := math.max(active_sl, high_ratchet)
+    
+    if (low <= active_sl)
+        strategy.close("Long", comment="STOP")
+        
+    if (squareoff_time)
+        strategy.close("Long", comment="EOD")

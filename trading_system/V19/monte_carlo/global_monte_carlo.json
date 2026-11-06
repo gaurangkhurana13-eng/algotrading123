@@ -1,0 +1,8 @@
+{
+  "n_sims": 10000,
+  "ruin_prob_50pct": 0.1,
+  "average_max_drawdown": 13.24,
+  "p5_worst_capital": 533.29,
+  "p50_median_capital": 781.35,
+  "p95_best_capital": 1015.19
+}

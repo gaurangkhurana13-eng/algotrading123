@@ -1,0 +1,27 @@
+{
+  "version": "V18",
+  "description": "Sector Dispersion & Alpha Leader Selection with Ratchet Milestone Sizing",
+  "metrics": {
+    "trades": 13,
+    "wins": 6,
+    "losses": 7,
+    "win_rate": 46.15,
+    "avg_win": 22.69,
+    "avg_loss": -17.3,
+    "payoff_ratio": 1.31,
+    "profit_factor": 1.12,
+    "net_pnl": 15.05,
+    "final_capital": 515.05,
+    "roi_pct": 3.01,
+    "ruin_prob_50pct": 0.01,
+    "expected_max_dd": 12.3
+  },
+  "artifacts": {
+    "trades_csv": "trades/v18_trades.csv",
+    "rejected_csv": "trades/v18_rejected_candidates.csv",
+    "pre_trade_decisions_jsonl": "monte_carlo/pre_trade_decisions.jsonl",
+    "global_mc_json": "monte_carlo/global_monte_carlo.json",
+    "performance_chart": "reports/v18_performance.png",
+    "audit_report": "reports/V18_FINAL_REPORT.md"
+  }
+}

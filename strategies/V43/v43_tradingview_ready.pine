@@ -1,0 +1,137 @@
+//@version=5
+strategy("Bhavishya V43 Titan (TradingView Ready)", 
+         overlay=true, 
+         initial_capital=500, 
+         currency=currency.INR, 
+         commission_type=strategy.commission.cash_per_order, 
+         commission_value=1.50, 
+         slippage=1, 
+         pyramiding=0)
+
+// ==============================================================================
+// 1. POSITION SIZING & DHAN 5X LEVERAGE
+// ==============================================================================
+useCompounding = input.bool(true, title="Enable Live Balance Compounding")
+fixedLeverage  = input.float(5.0, title="Dhan MIS Leverage", minval=1.0, maxval=5.0)
+
+currentPower = useCompounding ? (strategy.equity * fixedLeverage) : (500.0 * fixedLeverage)
+calcQty      = math.max(1, math.floor(currentPower / close))
+
+// ==============================================================================
+// 2. IST SESSION TIMING (Zero UTC Timezone Bug)
+// ==============================================================================
+// Strict IST trading window: 09:20 AM to 14:15 PM IST
+inTradeSession = not na(time(timeframe.period, "0920-1415:1234567", "Asia/Kolkata"))
+isEOD          = not na(time(timeframe.period, "1515-1530:1234567", "Asia/Kolkata"))
+
+// Deadzone filters in IST
+isLunchDeadzone = not na(time(timeframe.period, "1130-1230:1234567", "Asia/Kolkata"))
+isPostOpenTrap  = not na(time(timeframe.period, "1000-1005:1234567", "Asia/Kolkata"))
+timeFilterOk    = inTradeSession and not isLunchDeadzone and not isPostOpenTrap
+
+// ==============================================================================
+// 3. INDICATORS
+// ==============================================================================
+ema9   = ta.ema(close, 9)
+ema20  = ta.ema(close, 20)
+ema50  = ta.ema(close, 50)
+atr14  = ta.atr(14)
+rvol   = volume / ta.sma(volume, 20)
+rsi7   = ta.rsi(close, 7)
+vwapVal = ta.vwap(close)
+
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
+
+// Previous Day Close & Gap Calculation
+var float prev_day_close = na
+if ta.change(time("D")) != 0
+    prev_day_close := close[1]
+
+day_open = request.security(syminfo.tickerid, "D", open)
+open_gap_pct = not na(prev_day_close) and prev_day_close > 0 ? (day_open - prev_day_close) / prev_day_close * 100.0 : 0.0
+
+gap_filter = open_gap_pct <= 2.50 // Allows momentum stocks with modest gaps
+
+// ==============================================================================
+// 4. HIGH-CONVICTION TRIGGERS
+// ==============================================================================
+// Trigger 1: Core MACD Cross
+t1_base = ta.crossover(macdLine, signalLine) and macdLine > 0 and close > ema20 and rsi7 > 50.0 and rvol >= 1.20 and close > vwapVal
+
+// Trigger 2: Trend Pullback
+t2_pullback = macdLine > signalLine and macdLine > 0 and ema9 > ema20 and ema20 > ema50 and close > ema9 and rvol >= 1.20 and rsi7 >= 52.0 and rsi7 <= 76.0 and close > vwapVal
+
+// Trigger 3: Day Trader MA20 Reclaim (V43 Alpha)
+ma20Reclaim = low[1] < ema20[1] and close[1] <= ema20[1] and close > ema20 and macdLine > signalLine and close > vwapVal and rvol >= 1.15
+
+trigger = t1_base or t2_pullback or ma20Reclaim
+
+// Daily Loss Circuit Breaker
+var int daily_losses = 0
+var int last_day = na
+current_day = dayofmonth(time)
+
+if current_day != last_day
+    daily_losses := 0
+    last_day := current_day
+
+if strategy.closedtrades > 0 and ta.change(strategy.closedtrades) != 0
+    last_pnl = strategy.closedtrades.profit(strategy.closedtrades - 1)
+    if last_pnl < 0
+        daily_losses := daily_losses + 1
+
+longCondition = trigger and timeFilterOk and gap_filter and (daily_losses < 2) and (strategy.position_size == 0)
+
+var float entryPrice = na
+var float highSeen = na
+
+if (longCondition)
+    entryPrice := close
+    highSeen := high
+    
+    tradeVal = calcQty * close
+    estFee = (math.min(20.0, tradeVal * 0.0003) * 2.0) + 1.20
+    hardSL = close - (0.90 * atr14)
+    beLock = close + (0.45 * atr14)
+    
+    // Rich Telegram Alert String
+    alertMsg = "👑 [BHAVISHYA V43 TITAN - ENTRY]\n" +
+               "📈 Stock: " + syminfo.ticker + "\n" +
+               "🟢 Action: BUY (MIS 5x)\n" +
+               "💰 Entry: ₹" + str.tostring(close, "#.##") + "\n" +
+               "🛑 Hard SL: ₹" + str.tostring(hardSL, "#.##") + "\n" +
+               "🔒 BE Lock Target: ₹" + str.tostring(beLock, "#.##") + "\n" +
+               "⚡ 5x Trade Value: ₹" + str.tostring(tradeVal, "#.##") + " (" + str.tostring(calcQty) + " shares)\n" +
+               "💸 Est. Dhan Fees: ₹" + str.tostring(estFee, "#.##") + "\n" +
+               "⏰ Time: " + str.format_time(time, "HH:mm:ss", "Asia/Kolkata")
+               
+    alert(alertMsg, alert.freq_once_per_bar_close)
+    strategy.entry("V43_Long", strategy.long, qty=calcQty)
+
+// Asymmetric Ratchet Trailing Exit
+if (strategy.position_size > 0)
+    highSeen := math.max(nz(highSeen, high), high)
+    mfe_atr = (highSeen - entryPrice) / (atr14 + 1e-9)
+    
+    var float active_sl = na
+    if (mfe_atr >= 3.50)
+        active_sl := math.max(entryPrice + (2.00 * atr14), highSeen - (0.35 * atr14))
+    else if (mfe_atr >= 2.25)
+        active_sl := math.max(entryPrice + (1.20 * atr14), highSeen - (0.35 * atr14))
+    else if (mfe_atr >= 1.25)
+        active_sl := math.max(entryPrice + (0.55 * atr14), highSeen - (0.38 * atr14))
+    else if (mfe_atr >= 0.85)
+        active_sl := entryPrice + (0.40 * atr14)
+    else if (mfe_atr >= 0.45)
+        active_sl := entryPrice + (0.05 * atr14)
+    else
+        active_sl := entryPrice - (0.90 * atr14)
+        
+    strategy.exit("V43_Exit", from_entry="V43_Long", stop=active_sl)
+else
+    entryPrice := na
+    highSeen := na
+
+// 15:15 EOD Mandatory Square-Off
+if (isEOD and strategy.position_size > 0)
+    strategy.close_all(comment="15:15 EOD Cutoff")

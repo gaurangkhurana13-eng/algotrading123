@@ -1,0 +1,27 @@
+{
+  "version": "V19",
+  "description": "Half-Kelly Conviction-Weighted Risk Sizing with Pre-Trade Fat-Tail MC",
+  "metrics": {
+    "trades": 30,
+    "wins": 18,
+    "losses": 12,
+    "win_rate": 60.0,
+    "avg_win": 30.47,
+    "avg_loss": -22.47,
+    "payoff_ratio": 1.36,
+    "profit_factor": 2.03,
+    "net_pnl": 278.93,
+    "final_capital": 778.93,
+    "roi_pct": 55.79,
+    "ruin_prob_50pct": 0.1,
+    "expected_max_dd": 13.24
+  },
+  "artifacts": {
+    "trades_csv": "trades/v19_trades.csv",
+    "rejected_csv": "trades/v19_rejected_candidates.csv",
+    "pre_trade_decisions_jsonl": "monte_carlo/pre_trade_decisions.jsonl",
+    "global_mc_json": "monte_carlo/global_monte_carlo.json",
+    "performance_chart": "reports/v19_performance.png",
+    "audit_report": "reports/V19_FINAL_REPORT.md"
+  }
+}

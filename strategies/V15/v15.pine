@@ -1,0 +1,24 @@
+//@version=6
+strategy("Bhavishya V15 Tri-Phase Alpha Engine", overlay=true, initial_capital=500, default_qty_type=strategy.percent_of_equity, default_qty_value=10, commission_type=strategy.commission.cash_per_order, commission_value=1.50, slippage=1, margin_long=20.0)
+
+fastLength = input.int(12, "MACD Fast")
+slowLength = input.int(26, "MACD Slow")
+signalLength = input.int(9, "MACD Signal")
+rsiLength = input.int(7, "RSI Length")
+
+[macdLine, signalLine, _] = ta.macd(close, fastLength, slowLength, signalLength)
+rsiVal = ta.rsi(close, rsiLength)
+ema50 = ta.ema(close, 50)
+ema110 = ta.ema(close, 110)
+atrVal = ta.atr(14)
+vwapVal = ta.vwap
+
+longCondition = ta.crossover(macdLine, signalLine) and macdLine > 0 and close > ema50 and close > ema110 and close > vwapVal and rsiVal > 50.0 and close <= 450.0 and (hour < 14 or (hour == 14 and minute <= 15))
+
+if (longCondition and strategy.position_size == 0)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("SL", "Long", stop=close - atrVal)
+
+// Intraday 14:45 Hard Square-off
+if (hour == 14 and minute >= 45)
+    strategy.close_all("14:45 Square-off")

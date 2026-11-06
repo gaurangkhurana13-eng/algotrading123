@@ -1,0 +1,17 @@
+{
+  "num_simulations": 10000,
+  "sample_trades_count": 125,
+  "initial_capital": 500.0,
+  "ruin_risk_20pct_loss": 3.25,
+  "ruin_risk_50pct_loss": 0.02,
+  "median_terminal_equity": 1021.5,
+  "p5_terminal_equity_worst": 690.18,
+  "p95_terminal_equity_best": 1380.92,
+  "p50_max_drawdown_inr": 82.77,
+  "p95_max_drawdown_inr": 150.89,
+  "p99_max_drawdown_inr": 194.68,
+  "p50_max_drawdown_pct": 11.34,
+  "p95_max_drawdown_pct": 23.38,
+  "p99_max_drawdown_pct": 31.41,
+  "stress_test_profitable_pct": 88.81
+}

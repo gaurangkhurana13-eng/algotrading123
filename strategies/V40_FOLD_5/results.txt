@@ -1,0 +1,4 @@
+V40_FOLD_5 Results:
+Trades: 51
+Win Rate: 64.7%
+Net PnL: Rs +243.51

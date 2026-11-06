@@ -1,0 +1,42 @@
+================================================================================
+  BHAVISHYA STRATEGY V8: Keltner-Bollinger Squeeze Release + Chande Momentum Velocity
+================================================================================
+
+1. LOGIC SUMMARY
+   - Logic: Bollinger Bands (20, 2.0) coiled inside Keltner Channels (20, 1.5 ATR), triggering on bullish squeeze release with Chande Momentum Oscillator > 10.
+   - Dhan MIS costs + 0.05% slippage, Rs 500 base, 5x leverage max Rs 2,450
+   - Multi-Stock Portfolio Concurrency: Real-time margin pool tracking ensuring total open notional <= Rs 2,450
+
+--------------------------------------------------------------------------------
+INTRADAY
+--------------------------------------------------------------------------------
+Trades: 52
+Wins: 21
+Losses: 31
+Win Rate: 40.38%
+Net Profit: Rs -172.98
+Profit Factor: 0.52
+Avg Win: Rs 8.81
+Avg Loss: -11.55
+Payoff Ratio: 0.76x
+Avg Dhan Charges: Rs 1.76
+Max Drawdown: Rs 189.61
+Final Capital: Rs 327.02 (ROI: -34.6%)
+
+--------------------------------------------------------------------------------
+SWING
+--------------------------------------------------------------------------------
+Trades: 68
+Wins: 17
+Losses: 51
+Win Rate: 25.0%
+Net Profit: Rs -220.15
+Profit Factor: 0.45
+Avg Win: 10.5
+Avg Loss: -7.82
+Payoff Ratio: 1.34x
+Avg Dhan Charges: Rs 2.94
+Max Drawdown: Rs 250.34
+Final Capital: Rs 279.85 (ROI: -44.03%)
+
+================================================================================

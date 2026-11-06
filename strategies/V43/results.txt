@@ -1,0 +1,9 @@
+Strategy: Bhavishya V43 Titan
+Total Trades: 874
+Win Rate: 45.19%
+Profit Factor: 2.11
+Total Gross PnL: Rs 11070.81
+Total Charges: Rs 3299.64
+Total Net PnL: Rs 7771.17
+Average Win: Rs 37.48
+Average Loss: Rs -14.68

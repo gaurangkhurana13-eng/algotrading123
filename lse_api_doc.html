@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en" data-theme="light" class="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!--
+    Google Analytics 4 (gtag.js). Placed at the top of <head> as Google specifies.
+    Consent Mode v2 defaults are declared BEFORE the config call so GA honours
+    them: the three ads signals are denied because the site runs no ads and
+    must not build ad profiles for EEA visitors; analytics_storage stays granted
+    (GA4 default) until a consent banner exists to switch it per visitor.
+    Google Signals and ad-personalisation are switched off for the same reason.
+    Page views on client-side route changes come from GA4 enhanced measurement
+    (history change), so the SPA needs no per-route gtag calls.
+  -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5HJML9HGZK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'granted'
+    });
+    gtag('js', new Date());
+    gtag('set', 'allow_google_signals', false);
+    gtag('set', 'allow_ad_personalization_signals', false);
+    gtag('config', 'G-5HJML9HGZK');
+  </script>
+
+  <!--
+    Deploy-swap recovery guard. WHY: during a Cloudflare Pages deployment swap a
+    browser can briefly load an index.html whose hashed entry module
+    (/assets/index-*.js) is not yet servable, so the module 404s or fails its
+    strict-MIME check (the SPA fallback returns index.html as text/html), React
+    never mounts, and the page is blank: the "white screen after deploy" report.
+    HTML is served Cache-Control: max-age=0, must-revalidate, so a reload pulls a
+    correct index.html and revalidates the assets, recovering automatically instead
+    of the user having to wait out the cache. The sessionStorage flag makes this
+    fire at most once per tab session, so a genuine outage can never become a
+    reload loop. Kept inline in <head> (not a module) so the error listener is
+    registered before the entry module at end of <body> can fail.
+  -->
+  <script>
+    (function () {
+      var KEY = 'lse-boot-recover';
+      function recover() {
+        if (sessionStorage.getItem(KEY)) return; // already retried this session
+        try { sessionStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+        location.reload();
+      }
+      // Fast path: the hashed entry (or a lazy chunk) failed to load post-deploy.
+      // Resource error events do not bubble, so listen in the capture phase.
+      window.addEventListener('error', function (e) {
+        var el = e && e.target;
+        if (el && el.tagName === 'SCRIPT' && el.type === 'module' &&
+            String(el.src || '').indexOf('/assets/') !== -1) recover();
+      }, true);
+      // Fallback: nothing mounted into #root a few seconds after load (covers a
+      // failed stylesheet, or a browser that does not surface the module error).
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && root.childElementCount > 0) {
+            try { sessionStorage.removeItem(KEY); } catch (e) {} // booted OK: re-arm
+          } else {
+            recover();
+          }
+        }, 6000);
+      });
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <title>API Documentation | LSE Data 3.0 | London Strategic Edge</title>
+  <meta name="description" content="Every call of the LSE Data 3.0 API: the catalogue of eleven markets, previews, estimates and resumable CSV or Parquet exports of candles, trades, quotes, order books and Level 3 orders, options chains and flow, macro series and nineteen reference collections, with real answers and every refusal code.">
+  <meta name="keywords"
+    content="free market data, free historical market data, market data download, free tick data, free options data, free macro economic data, backtesting platform, machine learning trading, free trading platform, free bloomberg alternative, algo trading, quantitative trading, live charts, options chain, stock screener" />
+  <link rel="canonical" href="https://londonstrategicedge.com/api-documentation/" />
+
+  <!-- Global Organization Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "London Strategic Edge",
+      "alternateName": "LSE",
+      "url": "https://londonstrategicedge.com",
+      "logo": "https://londonstrategicedge.com/lse-logo-square.jpeg",
+      "sameAs": [
+        "https://www.instagram.com/londonstrategicedge/",
+        "https://github.com/londonstrategicedge",
+        "https://x.com/londonstrategicedge",
+        "https://www.linkedin.com/company/london-strategic-edge",
+        "https://www.cbinsights.com/company/london-strategic-edge"
+      ],
+      "description": "The largest free archive of market data: 4.8 trillion ticks across 246,000+ datasets, free to download, plus live charts, strategy backtesting and machine learning forecasting for 15,000+ instruments."
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "London Strategic Edge",
+      "alternateName": ["LSE", "London Strategic Edge Trading Platform"],
+      "url": "https://londonstrategicedge.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://londonstrategicedge.com/chart/{search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  </script>
+  <!-- SoftwareApplication Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "London Strategic Edge",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "GBP"
+      },
+      "description": "The largest free archive of market data plus free backtesting, machine learning price forecasting, live charts and options analysis for 15,000+ instruments.",
+      "featureList": [
+        "Strategy Backtesting Engine",
+        "Machine Learning Studio (LSTM, XGBoost, CatBoost, Random Forest)",
+        "Live Charts for 15,000+ Instruments",
+        "Options Chain Analysis",
+        "Economic Calendar",
+        "Stock Screener",
+        "Insider Trading Tracker",
+        "Monte Carlo Simulation",
+        "Ship Tracking Intelligence"
+      ]
+    }
+  </script>
+  <meta name="author" content="London Strategic Edge" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://londonstrategicedge.com/api-documentation/">
+  <meta property="og:locale" content="en_GB" />
+  <meta property="og:image" content="https://londonstrategicedge.com/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@londonstrategicedge" />
+  <meta name="twitter:image" content="https://londonstrategicedge.com/og-image.jpg" />
+  <meta property="og:title" content="API Documentation | LSE Data 3.0 | London Strategic Edge">
+  <meta name="twitter:title" content="API Documentation | LSE Data 3.0 | London Strategic Edge">
+  <meta property="og:description" content="Every call of the LSE Data 3.0 API: the catalogue of eleven markets, previews, estimates and resumable CSV or Parquet exports of candles, trades, quotes, order books and Level 3 orders, options chains and flow, macro series and nineteen reference collections, with real answers and every refusal code.">
+  <meta name="twitter:description" content="Every call of the LSE Data 3.0 API: the catalogue of eleven markets, previews, estimates and resumable CSV or Parquet exports of candles, trades, quotes, order books and Level 3 orders, options chains and flow, macro series and nineteen reference collections, with real answers and every refusal code.">
+  <meta property="og:site_name" content="London Strategic Edge">
+  <!-- Favicons - SVG first (modern browsers), fallback to JPEG -->
+  <link rel="icon" type="image/svg+xml" href="/lse-favicon.svg">
+  <link rel="icon" type="image/jpeg" href="/lse-logo-square.jpeg">
+  <link rel="shortcut icon" type="image/jpeg" href="/lse-logo-square.jpeg">
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="/lse-logo-square.jpeg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/lse-logo-square.jpeg">
+
+  <!-- iOS Native App (Capacitor) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LSE">
+
+  <!-- Android Chrome -->
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Windows Tiles -->
+  <meta name="msapplication-TileColor" content="#0a0a0a">
+  <meta name="msapplication-TileImage" content="/lse-logo-square.jpeg">
+
+  <!-- Leaflet CSS (non-blocking) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" media="print"
+    onload="this.media='all'" />
+  <script type="module" crossorigin src="/assets/index-B0teSxym.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CGU8Iuw3.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"API Documentation | LSE Data 3.0 | London Strategic Edge","description":"Every call of the LSE Data 3.0 API: the catalogue of eleven markets, previews, estimates and resumable CSV or Parquet exports of candles, trades, quotes, order books and Level 3 orders, options chains and flow, macro series and nineteen reference collections, with real answers and every refusal code.","url":"https://londonstrategicedge.com/api-documentation/","isPartOf":{"@type":"WebSite","name":"London Strategic Edge","url":"https://londonstrategicedge.com"}}</script>
+</head>
+
+<body>
+  <a href="#main-content" class="skip-link"
+    style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;padding:8px 16px;background:#0a0a0a;color:#fff;text-decoration:none;font-size:14px;"
+    onfocus="this.style.position='fixed';this.style.left='8px';this.style.top='8px';this.style.width='auto';this.style.height='auto';"
+    onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip
+    to main content</a>
+  <script>
+    // Apply theme immediately to prevent flash
+    (function () {
+      // Default to light if user has never chosen a theme; matches useTheme hook default
+      var theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.classList.add(theme);
+      if (theme !== 'dark') document.documentElement.classList.remove('dark');
+      if (theme !== 'light') document.documentElement.classList.remove('light');
+    })();
+  </script>
+
+  <!-- SEO Content for Accessibility & Crawlers -->
+  <div id="seo-content"
+    style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
+    <header>
+      <h1>API Documentation | LSE Data 3.0</h1>
+      <p>The LSE Data 3.0 API is one HTTPS service: every call is a GET under /v3 with the key in the X-API-Key header. It serves eleven markets, US, UK and Canadian stocks, forex, crypto, futures, indices, commodities and US options, with CME Globex and Nasdaq TotalView on paid plans: candles at fifteen timeframes from tick to monthly, trades, quotes, the Level 2 book and Level 3 orders, options chains and flow with Greeks, macro observations, releases and bond yields by country, and nineteen reference collections. Exports are CSV or Parquet, streamed at once or prepared as a job with a SHA-256 checksum and resumable download. This page documents every call with its parameters, real answers and every refusal code.</p>
+    </header>
+    <nav>
+      <h2>Explore London Strategic Edge</h2>
+      <a href="/">Home</a>
+      <a href="/markets">Markets Overview</a>
+      <a href="/backtest">Strategy Backtesting</a>
+      <a href="/machine-learning">Machine Learning</a>
+      <a href="/forex">Forex Markets</a>
+      <a href="/crypto">Cryptocurrency</a>
+      <a href="/stocks">Stocks</a>
+      <a href="/calendar">Economic Calendar</a>
+      <a href="/machine-learning-studio">ML Studio</a>
+      <a href="/stock-screener">Stock Screener</a>
+      <a href="/data">Free Datasets</a>
+      <a href="/api-documentation">Market Data API</a>
+    </nav>
+  </div>
+
+  <noscript>
+    <header style="padding:20px;max-width:1200px;margin:0 auto;">
+      <img src="/lse-logo-square.jpeg" alt="London Strategic Edge Logo" width="120" height="120">
+      <h1>API Documentation | LSE Data 3.0</h1>
+      <p>Every call of the LSE Data 3.0 API: the catalogue of eleven markets, previews, estimates and resumable CSV or Parquet exports of candles, trades, quotes, order books and Level 3 orders, options chains and flow, macro series and nineteen reference collections, with real answers and every refusal code.</p>
+    </header>
+    <main style="padding:20px;max-width:1200px;margin:0 auto;">
+      <h2>Explore London Strategic Edge</h2>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/markets">Markets Overview</a></li>
+        <li><a href="/backtest">Strategy Backtesting</a></li>
+        <li><a href="/machine-learning">Machine Learning</a></li>
+        <li><a href="/forex">Forex Markets</a></li>
+        <li><a href="/crypto">Cryptocurrency</a></li>
+        <li><a href="/stocks">Stocks</a></li>
+        <li><a href="/calendar">Economic Calendar</a></li>
+        <li><a href="/machine-learning-studio">ML Studio</a></li>
+        <li><a href="/stock-screener">Stock Screener</a></li>
+        <li><a href="/data">Free Datasets</a></li>
+        <li><a href="/api-documentation">Market Data API</a></li>
+      </ul>
+      <p>Please enable JavaScript to use the full London Strategic Edge platform.</p>
+    </main>
+  </noscript>
+
+  <div id="root"></div>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a54ca4a4ac98cd07',t:'MTc5MzcyMjE2Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a54ca4a4ac98cd07',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+</html>

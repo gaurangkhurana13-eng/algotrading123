@@ -1,0 +1,37 @@
+{
+  "version": "V11",
+  "name": "Bhavishya V11 — Fixed Position Sizing + Pre-Entry Monte Carlo Gate",
+  "created_at": "2026-10-27",
+  "capital": 500.0,
+  "leverage": 5.0,
+  "position_size_fixed": 2500.0,
+  "tp_atr_mult": 2.0,
+  "sl_atr_mult": 1.5,
+  "min_atr_norm": 0.005,
+  "hold_bars": 12,
+  "adx_min_trend": 22.0,
+  "conviction_threshold": 0.75,
+  "daily_top_n": 3,
+  "max_daily_loss": 2,
+  "slippage_per_leg": 0.0005,
+  "pre_trade_mc": {
+    "iterations": 10000,
+    "min_win_prob": 0.50,
+    "min_expected_ev": 0.0,
+    "max_cvar_loss": -45.0,
+    "seed": 42
+  },
+  "walk_forward": {
+    "n_folds": 5,
+    "embargo_days": 2,
+    "min_train_days": 25,
+    "iterations": 400,
+    "depth": 4,
+    "learning_rate": 0.04,
+    "l2_reg": 15.0
+  },
+  "global_monte_carlo": {
+    "iterations": 10000,
+    "seed": 42
+  }
+}

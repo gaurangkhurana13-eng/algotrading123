@@ -1,0 +1,44 @@
+//@version=5
+strategy("Bhavishya V43 Titan", overlay=true, initial_capital=500, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Parameters
+fastLength = 12
+slowLength = 26
+signalLength = 9
+ema9_len = 9
+ema20_len = 20
+ema50_len = 50
+
+[macdLine, signalLine, _] = ta.macd(close, fastLength, slowLength, signalLength)
+ema9 = ta.ema(close, ema9_len)
+ema20 = ta.ema(close, ema20_len)
+ema50 = ta.ema(close, ema50_len)
+atr14 = ta.atr(14)
+
+// Triggers
+macdCross = ta.crossover(macdLine, signalLine) and macdLine > 0 and close > ema20
+ma20Reclaim = low[1] < ema20[1] and close[1] <= ema20[1] and close > ema20 and macdLine > signalLine
+
+longCondition = (macdCross or ma20Reclaim) and close > ema50
+
+if (longCondition)
+    strategy.entry("V43 Long", strategy.long)
+
+// Ratchet Exit
+var float entryPrice = na
+var float highSeen = na
+if (strategy.position_size > 0)
+    entryPrice := strategy.position_avg_price
+    highSeen := math.max(nz(highSeen, high), high)
+    mfe = highSeen - entryPrice
+    
+    // Asymmetric Ratchet Ladder
+    if (mfe >= 0.85 * atr14)
+        strategy.exit("Lock 0.40 ATR", "V43 Long", stop=entryPrice + 0.40 * atr14)
+    else if (mfe >= 0.45 * atr14)
+        strategy.exit("BE Lock", "V43 Long", stop=entryPrice + 0.05 * atr14)
+    else
+        strategy.exit("Hard SL", "V43 Long", stop=entryPrice - 0.90 * atr14)
+else
+    entryPrice := na
+    highSeen := na

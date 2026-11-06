@@ -1,0 +1,50 @@
+================================================================================
+  BHAVISHYA STRATEGY V5: PRECISION SQUEEZE & ADAPTIVE MOONSHOT ENGINE
+================================================================================
+
+1. LOGIC SUMMARY
+   - MACD Zero-Line Cross (Fast 12, Slow 26, Sig 9 while MACD > 0)
+   - Macro Trend Gate (Close > 50 EMA)
+   - Institutional VWAP Anchor (Close > Shifted VWAP.shift(1))
+   - Fast RSI Buyer Dominance (RSI 7 > 50.0)
+   - ADX Trend Strength Confirmation (ADX 10 > 18.0 and +DI > -DI)
+   - Volatility Squeeze Context (Bollinger Bands 20, 2 inside Keltner 20, 1.5 ATR)
+   - Precision Moonshot Trailing Ratchet:
+     * Phase 1: At +0.85x ATR MFE -> Lock profit at +0.45x ATR floor
+     * Phase 2: At +1.70x ATR MFE -> Dynamic Moonshot Trailing (HighSeen - 0.60x ATR)
+     * Initial Stop: 1.00x ATR
+   - Realistic Execution: Dhan MIS costs + 0.05% slippage, Rs 500 base, 5x leverage max Rs 2,450
+
+--------------------------------------------------------------------------------
+INTRADAY
+--------------------------------------------------------------------------------
+Trades: 21
+Wins: 15
+Losses: 6
+Win Rate: 71.43%
+Net Profit: Rs 156.5
+Profit Factor: 2.73
+Avg Win: Rs 16.48
+Avg Loss: Rs -15.12
+Payoff Ratio: 1.09x
+Avg Dhan Charges: Rs 1.54
+Max Drawdown: Rs 58.6
+Final Capital: Rs 656.5 (ROI: 31.3%)
+
+--------------------------------------------------------------------------------
+SWING
+--------------------------------------------------------------------------------
+Trades: 35
+Wins: 17
+Losses: 18
+Win Rate: 48.57%
+Net Profit: Rs 75.54
+Profit Factor: 2.04
+Avg Win: Rs 8.7
+Avg Loss: Rs -4.02
+Payoff Ratio: 2.16x
+Avg Dhan Charges: Rs 1.4
+Max Drawdown: Rs 33.57
+Final Capital: Rs 575.54 (ROI: 15.11%)
+
+================================================================================

@@ -1,0 +1,11 @@
+V41_2016_H1 Results:
+Trades: 29
+Win Rate: 55.2%
+Net PnL: Rs -54.22
+Final Capital: Rs 445.78
+Profit Factor: 0.7
+Max Drawdown: 23.6%
+Average Win: Rs 7.77
+Average Loss: Rs 13.73
+Gross PnL: Rs -4.15
+Charges: Rs 50.07

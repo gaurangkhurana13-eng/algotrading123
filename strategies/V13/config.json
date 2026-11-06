@@ -1,0 +1,17 @@
+{
+  "version": "V13",
+  "tier1_universe": [
+    "PCJEWELLER.NS",
+    "UTKARSHBNK.NS",
+    "RPOWER.NS",
+    "IDEA.NS",
+    "MTNL.NS",
+    "TEXRAIL.NS"
+  ],
+  "tier2_screening": "Daily D-1 Completed Institutional Ignition Gate",
+  "capital_base": 500.0,
+  "leverage_mis": 5,
+  "max_notional_per_ticket": 1850.0,
+  "risk_cap_per_ticket": 12.8,
+  "exit_engine": "Tri-Phase Climax Harvester + Structural Stall Scratch"
+}

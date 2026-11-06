@@ -1,0 +1,13 @@
+Bhavishya V18 Scorecard:
+Total Trades: 162
+Win Rate: 58.02%
+Gross Wins: +Rs 7041.77
+Gross Losses: -Rs 2065.26
+Dhan Brokerage & Statutory Taxes: -Rs 969.85
+Net Profit: +Rs 4006.66
+Final Wallet: Rs 4506.66 (9.01x)
+Profit Factor: 3.41
+Avg Win: +Rs 68.94
+Avg Loss: -Rs 36.38
+Worst Loss: -Rs 96.03
+Max Drawdown: 26.57%

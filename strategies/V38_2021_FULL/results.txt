@@ -1,0 +1,31 @@
+----------------------------------------
+INTRADAY
+----------------------------------------
+Trades: 132
+Wins: 61
+Losses: 71
+Win Rate: 46.21%
+Gross Profit: Rs 877.25
+Gross Loss: Rs 659.20
+Net PnL: Rs 15.78
+Profit Factor: 1.02
+Avg Win: Rs 12.75
+Avg Loss: Rs -10.73
+Max Drawdown: 22.40%
+Final Wallet: Rs 515.78
+
+----------------------------------------
+SWING
+----------------------------------------
+Trades: 0
+Wins: 0
+Losses: 0
+Win Rate: 0.00%
+Gross Profit: Rs 0.00
+Gross Loss: Rs 0.00
+Net PnL: Rs 0.00
+Profit Factor: 0.00
+Avg Win: Rs 0.00
+Avg Loss: Rs 0.00
+Max Drawdown: 0.00%
+Final Capital: Rs 500.00

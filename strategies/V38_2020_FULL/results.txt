@@ -1,0 +1,4 @@
+V38_2020_FULL Results:
+Trades: 122
+Win Rate: 49.2%
+Net PnL: Rs -97.37

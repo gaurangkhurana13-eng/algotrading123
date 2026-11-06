@@ -1,0 +1,42 @@
+================================================================================
+  BHAVISHYA STRATEGY V1: CONFLUENCE BASELINE (SVMKR + MAPO + HMA)
+================================================================================
+
+1. LOGIC SUMMARY
+   - UT Bot ATR Trailing Stop (a=2.0, c=1)
+   - Hull Moving Average Trend Filter (HMA 31)
+   - LuxAlgo MAPO Consensus (> 50% bullish across 19 MAs)
+   - Asymmetric Profit Ratchet: Initial SL 1.5x ATR, Phase 1 Lock at +1.8x ATR -> +0.8x ATR floor, TP 4.0x ATR
+   - Realistic Execution: Dhan MIS costs + 0.05% slippage, Rs 500 base, 5x leverage max Rs 2,450
+
+--------------------------------------------------------------------------------
+2. INTRADAY MIS PERFORMANCE (Square-off by 15:10 IST)
+--------------------------------------------------------------------------------
+   Total Trades      : 36
+   Wins / Losses     : 9 Wins / 27 Losses
+   Win Rate          : 25.0%
+   Net Profit / Loss : Rs -137.04
+   Profit Factor     : 0.46
+   Average Win       : Rs 13.22
+   Average Loss      : Rs -9.48
+   Payoff Ratio      : 1.39x
+   Avg Dhan Charges  : Rs 1.24
+   Max Drawdown      : Rs 139.4
+   Final Capital     : Rs 362.96 (ROI: -27.41%)
+
+--------------------------------------------------------------------------------
+3. SWING / DELIVERY PERFORMANCE (Held Until Reversal/Target)
+--------------------------------------------------------------------------------
+   Total Trades      : 67
+   Wins / Losses     : 17 Wins / 50 Losses
+   Win Rate          : 25.37%
+   Net Profit / Loss : Rs -93.77
+   Profit Factor     : 0.64
+   Average Win       : Rs 9.64
+   Average Loss      : Rs -5.15
+   Payoff Ratio      : 1.87x
+   Avg Dhan Charges  : Rs 1.1
+   Max Drawdown      : Rs 130.25
+   Final Capital     : Rs 406.23 (ROI: -18.75%)
+
+================================================================================

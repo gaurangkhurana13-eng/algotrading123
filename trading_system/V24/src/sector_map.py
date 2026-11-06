@@ -1,0 +1,96 @@
+"""
+Hierarchical Sector and Sub-Industry classification for 78 NSE universe tickers.
+Allows relaxed capacity (up to 2 per sector) only if sub-industries differ.
+"""
+
+SECTOR_MAP = {
+    # Financials
+    "HDFCBANK": ("FINANCIALS", "PRIVATE_BANK"),
+    "ICICIBANK": ("FINANCIALS", "PRIVATE_BANK"),
+    "SBIN": ("FINANCIALS", "PSU_BANK"),
+    "KOTAKBANK": ("FINANCIALS", "PRIVATE_BANK"),
+    "AXISBANK": ("FINANCIALS", "PRIVATE_BANK"),
+    "INDUSINDBK": ("FINANCIALS", "PRIVATE_BANK"),
+    "BAJFINANCE": ("FINANCIALS", "NBFC_LENDING"),
+    "BAJAJFINSV": ("FINANCIALS", "FINANCIAL_HOLDING"),
+    "CHOLAFIN": ("FINANCIALS", "VEHICLE_FINANCE"),
+    "MUTHOOTFIN": ("FINANCIALS", "GOLD_LOAN"),
+    "PFC": ("FINANCIALS", "POWER_FINANCE"),
+    "RECLTD": ("FINANCIALS", "POWER_FINANCE"),
+    "SHRIRAMFIN": ("FINANCIALS", "COMMERCIAL_FINANCE"),
+    "HDFCLIFE": ("FINANCIALS", "LIFE_INSURANCE"),
+    "SBILIFE": ("FINANCIALS", "LIFE_INSURANCE"),
+    
+    # IT & Software
+    "INFY": ("IT", "TIER1_IT"),
+    "TCS": ("IT", "TIER1_IT"),
+    "HCLTECH": ("IT", "TIER1_IT"),
+    "WIPRO": ("IT", "TIER1_IT"),
+    "TECHM": ("IT", "TIER1_IT"),
+    "LTIM": ("IT", "TIER1_IT"),
+    "COFORGE": ("IT", "MIDCAP_SERVICES"),
+    "PERSISTENT": ("IT", "PRODUCT_DEV"),
+
+    # Auto & Ancillaries
+    "TATAMOTORS": ("AUTO", "COMMERCIAL_AND_PV"),
+    "MARUTI": ("AUTO", "PASSENGER_CARS"),
+    "M&M": ("AUTO", "UTILITY_AND_TRACTOR"),
+    "BAJAJ-AUTO": ("AUTO", "TWO_WHEELERS"),
+    "HEROMOTOCO": ("AUTO", "TWO_WHEELERS"),
+    "EICHERMOT": ("AUTO", "COMMERCIAL_AND_BIKES"),
+    "BHARATFORG": ("AUTO", "AUTO_ANCILLARY"),
+    "TVSMOTOR": ("AUTO", "TWO_WHEELERS"),
+
+    # Metals & Mining
+    "TATASTEEL": ("METALS", "STEEL_PRIMARY"),
+    "JSWSTEEL": ("METALS", "STEEL_PRIMARY"),
+    "HINDALCO": ("METALS", "ALUMINIUM"),
+    "VEDL": ("METALS", "DIVERSIFIED_MINING"),
+    "NMDC": ("METALS", "IRON_ORE"),
+    "SAIL": ("METALS", "STEEL_PSU"),
+    "JINDALSTEL": ("METALS", "STEEL_SECONDARY"),
+
+    # Energy, Oil & Power
+    "RELIANCE": ("ENERGY", "OIL_REFINING_AND_CONGLO"),
+    "ONGC": ("ENERGY", "OIL_EXPLORATION"),
+    "NTPC": ("ENERGY", "POWER_GENERATION"),
+    "POWERGRID": ("ENERGY", "POWER_TRANSMISSION"),
+    "COALINDIA": ("ENERGY", "MINING_PSU"),
+    "BPCL": ("ENERGY", "OIL_MARKETING"),
+    "IOC": ("ENERGY", "OIL_MARKETING"),
+    "TATAPOWER": ("ENERGY", "POWER_UTILITY"),
+    "ADANIGREEN": ("ENERGY", "RENEWABLES"),
+    "ADANIPOWER": ("ENERGY", "THERMAL_POWER"),
+
+    # Pharma & Healthcare
+    "SUNPHARMA": ("PHARMA", "FORMULATIONS"),
+    "DRREDDY": ("PHARMA", "GENERIC_EXPORT"),
+    "CIPLA": ("PHARMA", "DOMESTIC_RESPIRATORY"),
+    "DIVISLAB": ("PHARMA", "API_SYNTHESIS"),
+    "APOLLOHOSP": ("PHARMA", "HEALTHCARE_SERVICES"),
+    "LUPIN": ("PHARMA", "GENERIC_US"),
+    "TORNTPHARM": ("PHARMA", "SPECIALTY_PHARMA"),
+
+    # FMCG & Consumption
+    "ITC": ("FMCG", "TOBACCO_AND_DIVERSIFIED"),
+    "HINDUNILVR": ("FMCG", "PERSONAL_AND_HOMECARE"),
+    "NESTLEIND": ("FMCG", "PACKAGED_FOODS"),
+    "BRITANNIA": ("FMCG", "BAKERY_AND_DAIRY"),
+    "TATACONSUM": ("FMCG", "BEVERAGES_AND_STAPLES"),
+    "DABUR": ("FMCG", "AYURVEDIC_CONSUMER"),
+    "MARICO": ("FMCG", "EDIBLE_OILS_AND_HAIR"),
+
+    # Industrials & Infrastructure
+    "LT": ("INDUSTRIALS", "EPC_INFRA"),
+    "ADANIENT": ("INDUSTRIALS", "INCUBATOR_TRADE"),
+    "ADANIPORTS": ("INDUSTRIALS", "PORTS_LOGISTICS"),
+    "SIEMENS": ("INDUSTRIALS", "ELECTRICAL_ENGG"),
+    "ABB": ("INDUSTRIALS", "AUTOMATION_ROBOTICS"),
+    "BEL": ("INDUSTRIALS", "DEFENSE_ELECTRONICS"),
+    "HAL": ("INDUSTRIALS", "AEROSPACE_DEFENSE"),
+    "BHEL": ("INDUSTRIALS", "POWER_EQUIPMENT")
+}
+
+def get_sector_info(ticker: str) -> tuple:
+    cleaned = ticker.replace(".NS", "").upper()
+    return SECTOR_MAP.get(cleaned, ("GENERAL", "GENERAL"))

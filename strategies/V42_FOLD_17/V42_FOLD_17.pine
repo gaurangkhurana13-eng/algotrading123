@@ -1,0 +1,96 @@
+//@version=6
+strategy("Bhavishya V42 The Invincible (Loop-Breaker Dual Engine)", overlay=true, initial_capital=500, default_qty_type=strategy.cash, commission_type=strategy.commission.cash_per_order, commission_value=1.50, slippage=1)
+
+// ==============================================================================
+// BHAVISHYA V42: THE INVINCIBLE (THE LOOP-BREAKER ENGINE)
+// ==============================================================================
+// Architectural Upgrades (Synthesized with Day Trader Modular Powers):
+// 1. Weapon 1: Breakeven Lock @ +0.45 ATR (Entry + 0.05 ATR Buffer)
+//    - Eliminates whipsaws in low-volatility / tight-drift regimes (2016-2018).
+// 2. Weapon 2: Daily 2-Strike Circuit Breaker
+//    - Halts all further entries on any single session after 2 closed losses.
+// 3. Weapon 3: High-Conviction Institutional Volume Filter (RVOL >= 1.30)
+//    - Rejects low-volume false breakouts and post-open traps.
+// 4. Inherited Titan Regimes & Structural Armor:
+//    - Opening Gap Trap Quarantining (open_gap_pct <= 1.50%)
+//    - Midday Institutional Deadzone Elimination (11:30 - 12:30 IST)
+//    - Post-Open Liquidity Fakeout Avoidance (10:00 - 10:05 IST)
+//    - Asymmetric Multi-Stage Runner Ratchet (0.45 BE, 0.85 Lock, 1.25/2.25/3.50 Trails)
+// ==============================================================================
+
+// Technical Indicators
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+ema110 = ta.ema(close, 110)
+atr14 = ta.atr(14)
+rvol = volume / ta.sma(volume, 20)
+rsi7 = ta.rsi(close, 7)
+
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
+
+// Previous Day Close & Gap Calculation
+var float prev_day_close = na
+if ta.change(time("D")) != 0
+    prev_day_close := close[1]
+
+day_open = request.security(syminfo.tickerid, "D", open)
+open_gap_pct = (day_open - prev_day_close) / prev_day_close * 100.0
+
+// Daily Loss Counter for Circuit Breaker
+var int daily_losses = 0
+var int last_day = na
+current_day = dayofmonth(time)
+
+if current_day != last_day
+    daily_losses := 0
+    last_day := current_day
+
+// Check closed trades to increment daily losses
+if strategy.closedtrades > 0 and ta.change(strategy.closedtrades) != 0
+    last_pnl = strategy.closedtrades.profit(strategy.closedtrades - 1)
+    if last_pnl < 0
+        daily_losses := daily_losses + 1
+
+// High-Conviction Triggers (Institutional RVOL >= 1.30)
+t1_base = ta.crossover(macdLine, signalLine) and macdLine > 0 and close > ema20 and rsi7 > 50.0 and rvol >= 1.30
+t2_pullback = macdLine > signalLine and macdLine > 0 and ema9 > ema20 and ema20 > ema50 and close > ema9 and rvol >= 1.30 and rsi7 >= 52.0 and rsi7 <= 74.0
+trigger = t1_base or t2_pullback
+
+// Institutional Filters & Circuit Breakers
+time_filter = not (hour == 11 and minute >= 30) and not (hour == 12 and minute <= 30) and not (hour == 10 and minute <= 5)
+gap_filter = na(open_gap_pct) or open_gap_pct <= 1.50
+trade_window = (hour > 9 or (hour == 9 and minute >= 20)) and (hour < 14 or (hour == 14 and minute <= 15))
+daily_halt_filter = daily_losses < 2
+
+long_condition = trigger and time_filter and gap_filter and trade_window and daily_halt_filter
+
+if long_condition and strategy.position_size == 0
+    strategy.entry("V42_Long", strategy.long)
+
+// Master V42 Invincible Runner Ratchet
+if strategy.position_size > 0
+    entry_p = strategy.position_avg_price
+    high_seen = ta.highest(high, 10)
+    mfe_atr = (high_seen - entry_p) / atr14
+    
+    var float stop_ladder = na
+    if mfe_atr >= 3.50
+        stop_ladder := math.max(entry_p + (2.00 * atr14), high_seen - (0.35 * atr14))
+    else if mfe_atr >= 2.25
+        stop_ladder := math.max(entry_p + (1.20 * atr14), high_seen - (0.35 * atr14))
+    else if mfe_atr >= 1.25
+        stop_ladder := math.max(entry_p + (0.55 * atr14), high_seen - (0.38 * atr14))
+    else if mfe_atr >= 0.85
+        stop_ladder := entry_p + (0.40 * atr14)
+    else if mfe_atr >= 0.45
+        // DAY TRADER WEAPON 1: BREAKEVEN LOCK AT COST + SLIPPAGE/CHARGES
+        stop_ladder := entry_p + (0.05 * atr14)
+    else
+        stop_ladder := entry_p - (0.90 * atr14)
+        
+    strategy.exit("V42_Exit", from_entry="V42_Long", stop=stop_ladder)
+
+// Mandatory EOD Square-off at 14:45
+if hour == 14 and minute >= 45
+    strategy.close_all("EOD_Cutoff")

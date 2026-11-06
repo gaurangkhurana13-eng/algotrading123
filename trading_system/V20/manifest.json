@@ -1,0 +1,28 @@
+{
+  "version": "V20",
+  "description": "Bhavishya Quant Apex Master System (Full Institutional Synthesis)",
+  "metrics": {
+    "trades": 13,
+    "wins": 6,
+    "losses": 7,
+    "win_rate": 46.15,
+    "avg_win": 29.58,
+    "avg_loss": -22.95,
+    "payoff_ratio": 1.29,
+    "profit_factor": 1.1,
+    "net_pnl": 16.82,
+    "final_capital": 516.82,
+    "roi_pct": 3.36,
+    "ruin_prob_50pct": 0.33,
+    "expected_max_dd": 16.16
+  },
+  "artifacts": {
+    "trades_csv": "trades/v20_trades.csv",
+    "rejected_csv": "trades/v20_rejected_candidates.csv",
+    "pre_trade_decisions_jsonl": "monte_carlo/pre_trade_decisions.jsonl",
+    "global_mc_json": "monte_carlo/global_monte_carlo.json",
+    "performance_chart": "reports/v20_performance.png",
+    "audit_report": "reports/V20_FINAL_REPORT.md",
+    "master_comparison_report": "reports/FINAL_EVOLUTIONARY_COMPARISON_REPORT.md"
+  }
+}

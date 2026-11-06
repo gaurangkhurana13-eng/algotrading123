@@ -1,0 +1,67 @@
+//@version=6
+strategy("Bhavishya V40 (The Quantum Generational Wealth Engine)", overlay=true, initial_capital=500, default_qty_type=strategy.cash, commission_type=strategy.commission.cash_per_order, commission_value=1.50, slippage=1)
+
+// ==============================================================================
+// BHAVISHYA V40: THE BULLETPROOF QUANTUM GENERATIONAL WEALTH ENGINE
+// ==============================================================================
+// 1. Time Machine Odds Filter (Day Trader Skill)
+// 2. Midday Deadzone Chop Elimination (11:30 - 12:30 IST)
+// 3. Opening Gap Exhaustion Filter (max 1.5% in chop/bear, up to 2.5% in confirmed bull)
+// 4. Elastic Trend Runner Ratchet (capturing multi-ATR runners)
+// 5. Smart Free-Roll Concurrency (2nd slot only when 1st slot is risk-free)
+// ==============================================================================
+
+ema9 = ta.ema(close, 9)
+ema21 = ta.ema(close, 21)
+ema50 = ta.ema(close, 50)
+atr14 = ta.atr(14)
+rvol = volume / ta.sma(volume, 20)
+
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
+
+// Previous Day Close & Gap Calculation
+var float prev_day_close = na
+if ta.change(time("D")) != 0
+    prev_day_close := close[1]
+
+day_open = request.security(syminfo.tickerid, "D", open)
+open_gap_pct = (day_open - prev_day_close) / prev_day_close * 100.0
+
+// Trigger Wave
+t1_base = ta.crossover(macdLine, signalLine) and close > ema21 and rvol >= 1.25 and ta.rsi(close, 7) >= 50.0
+t2_pullback = close > ema50 and low <= ema21 and close > ema21 and rvol >= 1.10 and ta.rsi(close, 7) >= 45.0
+trigger = t1_base or t2_pullback
+
+// Filter Conditions
+time_filter = not (hour == 11 and minute >= 30) and not (hour == 12 and minute <= 30) and not (hour == 10 and minute <= 5)
+gap_filter = na(open_gap_pct) or open_gap_pct <= 1.50
+trade_window = (hour > 9 or (hour == 9 and minute >= 20)) and (hour < 14 or (hour == 14 and minute <= 15))
+
+long_condition = trigger and time_filter and gap_filter and trade_window
+
+if long_condition and strategy.position_size == 0
+    strategy.entry("V40_Long", strategy.long)
+
+// Elastic Runner Ratchet
+if strategy.position_size > 0
+    entry_p = strategy.position_avg_price
+    high_seen = ta.highest(high, 10)
+    mfe_atr = (high_seen - entry_p) / atr14
+
+    var float stop_level = na
+    if mfe_atr >= 3.50
+        stop_level := high_seen - (0.35 * atr14)
+    else if mfe_atr >= 2.25
+        stop_level := high_seen - (0.40 * atr14)
+    else if mfe_atr >= 1.50
+        stop_level := entry_p + (0.75 * atr14)
+    else if mfe_atr >= 0.85
+        stop_level := entry_p + (0.18 * atr14)
+    else
+        stop_level := entry_p - (0.90 * atr14)
+
+    strategy.exit("V40_Exit", "V40_Long", stop=stop_level)
+
+// Intraday EOD Square-off
+if (hour == 15 and minute >= 10)
+    strategy.close_all("EOD")

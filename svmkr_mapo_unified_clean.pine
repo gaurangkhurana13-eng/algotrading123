@@ -1,0 +1,170 @@
+//@version=6
+indicator(title="SVMKR + MAPO Precision Confluence [Unified]", 
+          shorttitle="SVMKR+MAPO [Unified]", 
+          overlay=true, 
+          max_labels_count=500, 
+          max_lines_count=500)
+
+// ==============================================================================
+// 1. INPUTS & CONFIGURATION (EXACT SCREENSHOT 41 PARAMETERS)
+// ==============================================================================
+grp_ut   = "1. SVMKR Engine (Wick-Hugging Trailing Stop)"
+a        = input.float(2.0, "UT Key Sensitivity", minval=0.5, step=0.1, group=grp_ut,
+                        tooltip="2.0 gives perfect tight wick-hugging trailing line identical to Screenshot 41.")
+c        = input.int(1, "UT ATR Period", minval=1, group=grp_ut,
+                     tooltip="Period 1 hugs the wicks directly without floating lag.")
+
+grp_hma  = "2. Hull Moving Average Filter"
+n        = input.int(31, "HMA Length", minval=5, group=grp_hma)
+show_hma = input.bool(false, "Show HMA Line on Chart (Keep false for ultra-clean chart)", group=grp_hma)
+
+grp_mapo = "3. LuxAlgo MAPO Consensus Filter"
+use_mapo = input.bool(true, "Require MAPO Bullish Consensus (> 50%) to Buy", group=grp_mapo,
+                      tooltip="Filters out false sideways whipsaws (kills the 7 false trades seen in chop).")
+mapo_min = input.int(10, "MAPO Minimum Length", minval=1, group=grp_mapo)
+mapo_max = input.int(100, "MAPO Maximum Length", minval=1, group=grp_mapo)
+mapo_sm  = input.int(9, "MAPO Smoothing Length", minval=1, group=grp_mapo)
+mapo_th  = input.float(50.0, "MAPO Bullish Threshold (%)", minval=10.0, maxval=90.0, group=grp_mapo)
+
+grp_tp   = "4. Dynamic Take-Profit Guide (Avoid Giveback)"
+show_tp  = input.bool(true, "Show Dotted Take-Profit Targets", group=grp_tp)
+tp1_pct  = input.float(3.0, "TP1 Target (+% for Safe Partial Booking)", step=0.5, group=grp_tp)
+tp2_pct  = input.float(6.0, "TP2 Target (+% for Expansion)", step=0.5, group=grp_tp)
+
+grp_time = "5. Groww Intraday Session Guard"
+use_time = input.bool(true, "Filter Out Late Entries (After 2:30 PM)", group=grp_time,
+                      tooltip="Prevents entering trades too close to Groww 3:15 PM auto-square-off.")
+
+// ==============================================================================
+// 2. MATHEMATICAL CONFLUENCE CALCULATIONS
+// ==============================================================================
+// A. Exact UT Bot ATR Trailing Stop Engine
+xATR  = ta.atr(c)
+nLoss = a * xATR
+src   = close
+
+var float xATRTrailingStop = 0.0
+prevStop = nz(xATRTrailingStop[1], 0.0)
+prevSrc  = nz(src[1], src)
+
+if src > prevStop and prevSrc > prevStop
+    xATRTrailingStop := math.max(prevStop, src - nLoss)
+else if src < prevStop and prevSrc < prevStop
+    xATRTrailingStop := math.min(prevStop, src + nLoss)
+else if src > prevStop
+    xATRTrailingStop := src - nLoss
+else
+    xATRTrailingStop := src + nLoss
+
+var int pos = 0
+if prevSrc < prevStop and src > xATRTrailingStop
+    pos := 1
+else if prevSrc > prevStop and src < xATRTrailingStop
+    pos := -1
+
+above   = ta.crossover(ta.ema(src, 1), xATRTrailingStop)
+below   = ta.crossover(xATRTrailingStop, ta.ema(src, 1))
+buy_ut  = src > xATRTrailingStop and above
+sell_ut = src < xATRTrailingStop and below
+
+// B. Exact Hull Moving Average 31
+hma_val = ta.hma(close, n)
+hmaBull = close > hma_val
+plot(show_hma ? hma_val : na, "Hull MA 31", color=hma_val > hma_val[1] ? color.teal : color.purple, linewidth=2)
+
+// C. Exact LuxAlgo MAPO Consensus Calculation
+csum = ta.cum(close)
+totalMAs = (mapo_max - mapo_min + 1)
+float per = 0.0
+for i = mapo_min to mapo_max
+    ma = (csum - csum[i]) / i
+    per += (close > ma ? 1.0 : 0.0)
+
+per := ta.sma(per, mapo_sm)
+mapoNorm = (per / totalMAs) * 100.0
+mapoBull = not use_mapo or (mapoNorm >= mapo_th)
+
+// D. Time Guard (No late trades for Groww MIS)
+time_ok = not use_time or (hour >= 9 and (hour < 14 or (hour == 14 and minute <= 30)))
+
+// ==============================================================================
+// 3. CLEAN CONFLUENCE STATE MACHINE
+// ==============================================================================
+var int active_pos = 0 // 1 = Long, 0 = Flat
+var float entry_price = na
+var float tp1_price = na
+var float tp2_price = na
+
+// Confluence Buy: UT Crossover + HMA Bullish + MAPO > 50% + Valid Time
+confluence_buy  = (active_pos == 0) and buy_ut and hmaBull and mapoBull and time_ok
+
+// Clean Exit: Price falls under trailing line
+confluence_exit = (active_pos == 1) and sell_ut
+
+if confluence_buy
+    active_pos  := 1
+    entry_price := close
+    tp1_price   := close * (1 + tp1_pct / 100.0)
+    tp2_price   := close * (1 + tp2_pct / 100.0)
+
+if confluence_exit
+    active_pos  := 0
+    entry_price := na
+    tp1_price   := na
+    tp2_price   := na
+
+// ==============================================================================
+// 4. CLEAN VISUALS (EXACTLY LIKE SCREENSHOT 41)
+// ==============================================================================
+// Single, smooth Trailing Line that perfectly hugs wicks
+color trail_color = pos == 1 ? color.green : color.red
+plot(xATRTrailingStop, "UT Trailing Stop", color=trail_color, linewidth=2, style=plot.style_linebr)
+
+// Original Compact Badges (No ugly strategy bubbles!)
+plotshape(confluence_buy, title="Buy Signal", text="Buy", style=shape.labelup, 
+          location=location.belowbar, color=color.green, textcolor=color.white, size=size.tiny)
+
+plotshape(confluence_exit, title="Sell Signal", text="Sell", style=shape.labeldown, 
+          location=location.abovebar, color=color.red, textcolor=color.white, size=size.tiny)
+
+// Dynamic Take Profit Target Lines (Dotted)
+plot(show_tp and active_pos == 1 ? tp1_price : na, "TP1 Target (+3%)", color=color.new(color.teal, 30), style=plot.style_circles, linewidth=2)
+plot(show_tp and active_pos == 1 ? tp2_price : na, "TP2 Target (+6%)", color=color.new(color.blue, 30), style=plot.style_circles, linewidth=2)
+
+// Candle Coloring
+barcolor(pos == 1 ? color.green : (pos == -1 and close < hma_val ? color.maroon : na))
+
+// ==============================================================================
+// 5. LIVE QUANT HUD (Top-Right Compact Panel)
+// ==============================================================================
+var table hud = table.new(position.top_right, 2, 5, 
+                          bgcolor=color.new(#0A0E17, 15), 
+                          border_color=color.new(color.gray, 60), 
+                          border_width=1)
+
+if barstate.islast
+    table.cell(hud, 0, 0, "SVMKR + MAPO", bgcolor=color.new(#161B22, 20), text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 0, "LIVE HUD", bgcolor=color.new(#161B22, 20), text_color=color.white, text_size=size.small)
+    
+    string pos_str = active_pos == 1 ? "IN TRADE 🟢" : "CASH / WAIT ⚪"
+    color pos_col  = active_pos == 1 ? color.green : color.gray
+    table.cell(hud, 0, 1, "Status", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 1, pos_str, text_color=pos_col, text_size=size.small)
+    
+    table.cell(hud, 0, 2, "Trailing SL", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 2, "₹" + str.tostring(xATRTrailingStop, "#.##"), text_color=trail_color, text_size=size.small)
+    
+    table.cell(hud, 0, 3, "MAPO Consensus", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 3, str.tostring(mapoNorm, "#.#") + "% " + (mapoBull ? "🟢 BULLISH" : "🔴 CHOP"), 
+               text_color=mapoBull ? color.green : color.red, text_size=size.small)
+               
+    string time_str = time_ok ? "ENTRY ACTIVE 🟢" : "NO NEW ENTRY (Late) ⛔"
+    color time_col  = time_ok ? color.green : color.orange
+    table.cell(hud, 0, 4, "Time Window", text_color=color.white, text_size=size.small)
+    table.cell(hud, 1, 4, time_str, text_color=time_col, text_size=size.small)
+
+// ==============================================================================
+// 6. LIVE TRADINGVIEW ALERTS
+// ==============================================================================
+alertcondition(confluence_buy, title="SVMKR+MAPO Buy Alert", message="🟢 BUY Signal on {{ticker}} @ {{close}} | SL: {{plot_0}}")
+alertcondition(confluence_exit, title="SVMKR+MAPO Exit Alert", message="🔴 EXIT Signal on {{ticker}} @ {{close}}")

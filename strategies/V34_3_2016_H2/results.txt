@@ -1,0 +1,7 @@
+V34_3_2016_H2 Results:
+Trades: 56
+Win Rate: 46.4%
+Net PnL: Rs -176.24
+Final Capital: Rs 323.76
+Profit Factor: 0.5
+Max Drawdown: 39.5%

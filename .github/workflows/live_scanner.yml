@@ -1,0 +1,35 @@
+name: Bhavishya Live Cloud Forward-Tester
+
+on:
+  schedule:
+    # 03:45 UTC = 09:15 AM IST (Monday to Friday)
+    - cron: '45 3 * * 1-5'
+  workflow_dispatch: # Allows manual 1-click start anytime from phone or web
+
+jobs:
+  run-live-scanner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 380 # Runs for the entire trading day (09:15 to 15:30 IST)
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas numpy websocket-client
+          pip install git+https://github.com/rongardF/tvdatafeed.git || pip install tvdatafeed
+
+      - name: Run Bhavishya Live Telegram Forward-Tester
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/live_telegram_forward_tester.py --live

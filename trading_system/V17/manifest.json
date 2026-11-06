@@ -1,0 +1,27 @@
+{
+  "version": "V17",
+  "description": "Time-of-Day Microstructure Window (09:45-14:15 IST) with Ratchet Milestone Sizing",
+  "metrics": {
+    "trades": 30,
+    "wins": 18,
+    "losses": 12,
+    "win_rate": 60.0,
+    "avg_win": 22.79,
+    "avg_loss": -17.69,
+    "payoff_ratio": 1.29,
+    "profit_factor": 1.93,
+    "net_pnl": 197.93,
+    "final_capital": 697.93,
+    "roi_pct": 39.59,
+    "ruin_prob_50pct": 0.01,
+    "expected_max_dd": 11.14
+  },
+  "artifacts": {
+    "trades_csv": "trades/v17_trades.csv",
+    "rejected_csv": "trades/v17_rejected_candidates.csv",
+    "pre_trade_decisions_jsonl": "monte_carlo/pre_trade_decisions.jsonl",
+    "global_mc_json": "monte_carlo/global_monte_carlo.json",
+    "performance_chart": "reports/v17_performance.png",
+    "audit_report": "reports/V17_FINAL_REPORT.md"
+  }
+}

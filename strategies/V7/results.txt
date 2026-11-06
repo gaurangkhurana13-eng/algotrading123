@@ -1,0 +1,42 @@
+================================================================================
+  BHAVISHYA STRATEGY V7: SuperTrend Momentum Confluence & Dynamic Moonshot Ratchet
+================================================================================
+
+1. LOGIC SUMMARY
+   - Logic: SuperTrend (10, 2.5) Bullish Trend Regime combined with MACD Zero-Line cross, Shifted Daily VWAP, Fast RSI 7, ADX 10, and Dynamic Asymmetric Moonshot Ratchet.
+   - Dhan MIS costs + 0.05% slippage, Rs 500 base, 5x leverage max Rs 2,450
+   - Multi-Stock Portfolio Concurrency: Real-time margin pool tracking ensuring total open notional <= Rs 2,450
+
+--------------------------------------------------------------------------------
+INTRADAY
+--------------------------------------------------------------------------------
+Trades: 52
+Wins: 34
+Losses: 18
+Win Rate: 65.38%
+Net Profit: Rs 311.93
+Profit Factor: 2.37
+Avg Win: Rs 15.85
+Avg Loss: -12.61
+Payoff Ratio: 1.26x
+Avg Dhan Charges: Rs 1.66
+Max Drawdown: Rs 81.07
+Final Capital: Rs 811.93 (ROI: 62.39%)
+
+--------------------------------------------------------------------------------
+SWING
+--------------------------------------------------------------------------------
+Trades: 80
+Wins: 33
+Losses: 47
+Win Rate: 41.25%
+Net Profit: Rs 183.42
+Profit Factor: 1.59
+Avg Win: 15.0
+Avg Loss: -6.63
+Payoff Ratio: 2.26x
+Avg Dhan Charges: Rs 2.81
+Max Drawdown: Rs 101.64
+Final Capital: Rs 683.42 (ROI: 36.68%)
+
+================================================================================

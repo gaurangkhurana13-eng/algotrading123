@@ -1,0 +1,69 @@
+//@version=6
+strategy("Bhavishya V41 The Titan (Regime-Adaptive Dual Engine)", overlay=true, initial_capital=500, default_qty_type=strategy.cash, commission_type=strategy.commission.cash_per_order, commission_value=1.50, slippage=1)
+
+// ==============================================================================
+// BHAVISHYA V41: THE TITAN (REGIME-ADAPTIVE DUAL ENGINE)
+// ==============================================================================
+// 1. Dual-Core Triggers (T1 Primary MACD Cross + T2 Structural Pullback)
+// 2. Morning Opening Gap-Up Trap Quarantining (open_gap_pct <= 1.50%)
+// 3. Midday Institutional Deadzone Elimination (11:30 - 12:30 IST)
+// 4. Post-Open Trap Filter (10:00 - 10:05 IST)
+// 5. Multi-Stage Titan Ratchet (0.85 ATR Lock, 1.25 ATR Trail, 2.25 ATR Extension, 3.50 ATR Super-Runner)
+// ==============================================================================
+
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+ema110 = ta.ema(close, 110)
+atr14 = ta.atr(14)
+rvol = volume / ta.sma(volume, 20)
+rsi7 = ta.rsi(close, 7)
+
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
+
+// Previous Day Close & Gap Calculation
+var float prev_day_close = na
+if ta.change(time("D")) != 0
+    prev_day_close := close[1]
+
+day_open = request.security(syminfo.tickerid, "D", open)
+open_gap_pct = (day_open - prev_day_close) / prev_day_close * 100.0
+
+// Trigger Waves
+t1_base = ta.crossover(macdLine, signalLine) and macdLine > 0 and close > ema20 and rsi7 > 50.0 and rvol >= 1.20
+t2_pullback = macdLine > signalLine and macdLine > 0 and ema9 > ema20 and ema20 > ema50 and close > ema9 and rvol >= 1.20 and rsi7 >= 52.0 and rsi7 <= 74.0
+trigger = t1_base or t2_pullback
+
+// Filter Conditions
+time_filter = not (hour == 11 and minute >= 30) and not (hour == 12 and minute <= 30) and not (hour == 10 and minute <= 5)
+gap_filter = na(open_gap_pct) or open_gap_pct <= 1.50
+trade_window = (hour > 9 or (hour == 9 and minute >= 20)) and (hour < 14 or (hour == 14 and minute <= 15))
+
+long_condition = trigger and time_filter and gap_filter and trade_window
+
+if long_condition and strategy.position_size == 0
+    strategy.entry("V41_Long", strategy.long)
+
+// Master V41 Titan Runner Ratchet
+if strategy.position_size > 0
+    entry_p = strategy.position_avg_price
+    high_seen = ta.highest(high, 10)
+    mfe_atr = (high_seen - entry_p) / atr14
+    
+    var float stop_ladder = na
+    if mfe_atr >= 3.50
+        stop_ladder := math.max(entry_p + (2.00 * atr14), high_seen - (0.35 * atr14))
+    else if mfe_atr >= 2.25
+        stop_ladder := math.max(entry_p + (1.20 * atr14), high_seen - (0.35 * atr14))
+    else if mfe_atr >= 1.25
+        stop_ladder := math.max(entry_p + (0.55 * atr14), high_seen - (0.38 * atr14))
+    else if mfe_atr >= 0.85
+        stop_ladder := entry_p + (0.40 * atr14)
+    else
+        stop_ladder := entry_p - (0.90 * atr14)
+        
+    strategy.exit("V41_Exit", from_entry="V41_Long", stop=stop_ladder)
+
+// Mandatory EOD Square-off at 14:45
+if hour == 14 and minute >= 45
+    strategy.close_all("EOD_Cutoff")

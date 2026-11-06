@@ -1,0 +1,7 @@
+{
+  "dataset": "data/universe_78_15m_1y.pkl",
+  "total_universe_tickers": 78,
+  "bars_per_ticker": 5000,
+  "date_range": "30-Dec-2025 to 29-Oct-2026",
+  "status": "100% genuine bar-grounded institutional data"
+}

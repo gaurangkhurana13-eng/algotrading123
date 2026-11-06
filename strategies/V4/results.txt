@@ -1,0 +1,47 @@
+================================================================================
+  BHAVISHYA STRATEGY V4: MOMENTUM MOONSHOT & DYNAMIC TRAILING ENGINE
+================================================================================
+
+1. LOGIC SUMMARY
+   - MACD Zero-Line Cross (Fast 12, Slow 26, Sig 9 while MACD > 0)
+   - Macro Trend Gate (Close > 50 EMA)
+   - Institutional VWAP Anchor (Close > Shifted VWAP.shift(1))
+   - Fast RSI Buyer Dominance (RSI 7 > 52.0)
+   - ADX Trend Strength Confirmation (ADX 10 > 20.0 and +DI > -DI)
+   - Dynamic Moonshot Trailing Ratchet:
+     * Phase 1: At +0.90x ATR MFE -> Lock profit at +0.35x ATR floor
+     * Phase 2: At +1.80x ATR MFE -> Dynamic Moonshot Trailing (HighSeen - 0.70x ATR)
+     * Initial Stop: 1.00x ATR
+   - Realistic Execution: Dhan MIS costs + 0.05% slippage, Rs 500 base, 5x leverage max Rs 2,450
+
+--------------------------------------------------------------------------------
+2. INTRADAY MIS PERFORMANCE (Square-off by 15:10 IST)
+--------------------------------------------------------------------------------
+   Total Trades      : 21
+   Wins / Losses     : 15 Wins / 6 Losses
+   Win Rate          : 71.43%
+   Net Profit / Loss : Rs 141.16
+   Profit Factor     : 2.61
+   Average Win       : Rs 15.27
+   Average Loss      : Rs -14.65
+   Payoff Ratio      : 1.04x
+   Avg Dhan Charges  : Rs 1.53
+   Max Drawdown      : Rs 57.93
+   Final Capital     : Rs 641.16 (ROI: 28.23%)
+
+--------------------------------------------------------------------------------
+3. SWING / DELIVERY PERFORMANCE (Held Until Reversal/Target)
+--------------------------------------------------------------------------------
+   Total Trades      : 34
+   Wins / Losses     : 16 Wins / 18 Losses
+   Win Rate          : 47.06%
+   Net Profit / Loss : Rs 68.28
+   Profit Factor     : 1.96
+   Average Win       : Rs 8.72
+   Average Loss      : Rs -3.96
+   Payoff Ratio      : 2.2x
+   Avg Dhan Charges  : Rs 1.11
+   Max Drawdown      : Rs 31.89
+   Final Capital     : Rs 568.28 (ROI: 13.66%)
+
+================================================================================

@@ -1,0 +1,27 @@
+{
+  "version": "V12",
+  "description": "Dynamic Volatility Risk Budgeting with Student's t Fat-Tail Pre-Trade Monte Carlo",
+  "metrics": {
+    "trades": 30,
+    "wins": 16,
+    "losses": 14,
+    "win_rate": 53.33,
+    "avg_win": 22.62,
+    "avg_loss": -17.42,
+    "payoff_ratio": 1.3,
+    "profit_factor": 1.48,
+    "net_pnl": 118.02,
+    "final_capital": 618.02,
+    "roi_pct": 23.6,
+    "ruin_prob_50pct": 0.12,
+    "expected_max_dd": 14.38
+  },
+  "artifacts": {
+    "trades_csv": "trades/v12_trades.csv",
+    "rejected_csv": "trades/v12_rejected_candidates.csv",
+    "pre_trade_decisions_jsonl": "monte_carlo/pre_trade_decisions.jsonl",
+    "global_mc_json": "monte_carlo/global_monte_carlo.json",
+    "performance_chart": "reports/v12_performance.png",
+    "audit_report": "reports/V12_FINAL_REPORT.md"
+  }
+}

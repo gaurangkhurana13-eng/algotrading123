@@ -1,0 +1,86 @@
+//@version=6
+strategy("Bhavishya Strategy V7 - SuperTrend Momentum Confluence & Dynamic Moonshot Ratchet", 
+         shorttitle="BHAVISHYA V7", 
+         overlay=true, 
+         initial_capital=500, 
+         default_qty_type=strategy.cash, 
+         default_qty_value=500, 
+         margin_long=20,
+         commission_type=strategy.commission.cash_per_order, 
+         commission_value=1.50, 
+         slippage=1, 
+         precision=2)
+
+// ==============================================================================
+// 1. INPUTS & CONFIGURATION
+// ==============================================================================
+sl_mult   = input.float(1.0, "Initial Stop Loss (x ATR)", step=0.05)
+p1_trig   = input.float(0.85, "Phase 1 Lock Trigger (x ATR)", step=0.05)
+p1_lock   = input.float(0.4, "Phase 1 Profit Floor (x ATR)", step=0.05)
+p2_trig   = input.float(1.7, "Phase 2 Moonshot Trigger (x ATR)", step=0.05)
+trail_dist = input.float(0.65, "Phase 2 Trail Distance (x ATR)", step=0.05)
+
+// ==============================================================================
+// 2. INDICATOR ENGINE
+// ==============================================================================
+ema50 = ta.ema(close, 50)
+plot(ema50, "Macro 50 EMA", color=color.orange, linewidth=2)
+
+vwap_val = ta.vwap(hlc3)
+plot(vwap_val, "Shifted VWAP", color=color.purple, linewidth=1)
+
+atr14 = ta.atr(14)
+
+// SuperTrend 10, 2.5
+[st_val, st_dir] = ta.supertrend(2.5, 10)
+st_bull = (st_dir < 0)
+
+// MACD 12, 26, 9
+[macdLine, signalLine, hist] = ta.macd(close, 12, 26, 9)
+macd_cross = ta.crossover(macdLine, signalLine) and (macdLine > 0)
+
+// Fast RSI 7
+rsi7 = ta.rsi(close, 7)
+
+// ADX 10
+[plus_di, minus_di, adx] = ta.dmi(10, 10)
+trend_ok = (adx > 18.0) and (plus_di > minus_di)
+
+entry_condition = macd_cross and st_bull and (close > vwap_val[1]) and (close > ema50) and (rsi7 > 50.0) and trend_ok
+
+// Time Filter: 09:20 to 13:30 IST
+time_ok = (hour > 9 or (hour == 9 and minute >= 20)) and (hour < 13 or (hour == 13 and minute <= 30))
+
+var float active_sl = na
+var float high_seen = na
+var float entry_atr = na
+var int phase = 0
+
+if entry_condition and time_ok and strategy.position_size == 0
+    strategy.entry("Long", strategy.long)
+    entry_atr := atr14
+    active_sl := close - (sl_mult * entry_atr)
+    high_seen := high
+    phase := 0
+
+if strategy.position_size > 0
+    high_seen := math.max(high_seen, high)
+    entry_p = strategy.position_avg_price
+    mfe_atr = (high_seen - entry_p) / entry_atr
+    
+    if mfe_atr >= p1_trig and phase < 1
+        phase := 1
+        active_sl := math.max(active_sl, entry_p + (p1_lock * entry_atr))
+        
+    if mfe_atr >= p2_trig
+        phase := 2
+        active_sl := math.max(active_sl, high_seen - (trail_dist * entry_atr))
+        
+    if low <= active_sl
+        strategy.close("Long", comment="Ratchet/Trail Hit")
+
+// 15:10 IST Intraday Square-off
+if (hour == 15 and minute >= 10) or (hour > 15)
+    strategy.close_all("15:10 MIS Square-Off")
+
+plot(strategy.position_size > 0 ? active_sl : na, "Ratchet Floor", color=color.green, style=plot.style_linebr, linewidth=2)

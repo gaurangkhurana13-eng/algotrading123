@@ -1,0 +1,48 @@
+{
+  "version": "V8",
+  "run_id": "RUN_V8_20261029_135626",
+  "timestamp": "2026-10-29T13:56:26.842660",
+  "status": "REJECTED_AUDIT_FAIL",
+  "files": {
+    "audit_report.txt": {
+      "sha256": "51a49a600ac32fe1",
+      "size_bytes": 8187
+    },
+    "config.json": {
+      "sha256": "b443ef2a713c542f",
+      "size_bytes": 178
+    },
+    "data_manifest.json": {
+      "sha256": "4c17176ec92de7a4",
+      "size_bytes": 1805
+    },
+    "results.txt": {
+      "sha256": "84d1a685a02e1df5",
+      "size_bytes": 1543
+    },
+    "run_v8.py": {
+      "sha256": "b2243ec03efd2883",
+      "size_bytes": 3885
+    },
+    "strategy.pine": {
+      "sha256": "d193489273506809",
+      "size_bytes": 2935
+    },
+    "strategy.py": {
+      "sha256": "b2243ec03efd2883",
+      "size_bytes": 3885
+    },
+    "trades_intraday.csv": {
+      "sha256": "bedc2b5ef5539374",
+      "size_bytes": 5798
+    },
+    "trades_swing.csv": {
+      "sha256": "7f16f2ceaf848112",
+      "size_bytes": 7466
+    },
+    "v8.pine": {
+      "sha256": "d193489273506809",
+      "size_bytes": 2935
+    }
+  }
+}

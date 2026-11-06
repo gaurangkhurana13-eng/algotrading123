@@ -1,0 +1,47 @@
+{
+  "version": "V18",
+  "capital": 500.0,
+  "leverage": 5.0,
+  "sizing_mode": "tiered_milestone_capital_scaling",
+  "tiers": [
+    {"max_capital": 750.0, "risk_budget": 20.0},
+    {"max_capital": 1000.0, "risk_budget": 30.0},
+    {"max_capital": 999999.0, "risk_budget": 40.0}
+  ],
+  "conviction_threshold": 0.75,
+  "daily_top_n": 3,
+  "max_trades_per_sector": 1,
+  "max_daily_loss": 2,
+  "tp_atr_mult": 2.0,
+  "sl_atr_mult": 1.5,
+  "min_atr_norm": 0.005,
+  "hold_bars": 12,
+  "adx_min_trend": 25.0,
+  "time_window_start": "09:45",
+  "time_window_end": "14:15",
+  "slippage_per_leg": 0.0005,
+  "dhan_brokerage_rate": 0.0003,
+  "dhan_max_brokerage": 20.0,
+  "pre_trade_mc": {
+    "iterations": 10000,
+    "min_win_prob": 0.50,
+    "min_expected_ev": 0.0,
+    "max_cvar_loss": -45.0,
+    "distribution": "students_t",
+    "degrees_of_freedom": 5,
+    "seed": 42
+  },
+  "walk_forward": {
+    "n_folds": 5,
+    "embargo_days": 2,
+    "min_train_days": 25,
+    "iterations": 400,
+    "depth": 4,
+    "l2_reg": 15.0,
+    "learning_rate": 0.04
+  },
+  "global_monte_carlo": {
+    "iterations": 10000,
+    "seed": 42
+  }
+}

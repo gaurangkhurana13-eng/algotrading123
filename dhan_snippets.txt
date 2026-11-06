@@ -1,0 +1,30 @@
+Brokerage mentions: 61
+
+=== Match at 20605 ===
+function F(e,t,a,s,r){if(!e)return null;var l=r?parseFloat(r[0].ltsz):1,n=(parseFloat(""==t?0:t)*parseFloat(s)+parseFloat(a)*parseFloat(s))*l,o=parseFloat(e.TOTAL_CHARGES_TAX).toFixed(2)-parseFloat(e.BROKERAGE).toFixed(2),i=t>0&&a>0,c=i?(a-t)*s*l-e.TOTAL_CHARGES_TAX:0;return{buyValue:t*s*l,sellValue:a*s*l,tradeValue:isNaN(n)?0:n,brokerage:e.BROKERAGE,otherCharges:o,grossPnl:i?(a-t)*s*l:0,netPnl:c,exchangeCharges:e.EXCHANGE_CHARGES,dpCharges:e.DP_CHARGES,sttCharges:e.STT_CHARGES,sebiCharges:e.SEBI_CHARGES,ipftCharges:e.IPFT_CHARGES,stampDuty:e.S
+======================================================================
+
+=== Match at 20736 ===
+loat(s))*l,o=parseFloat(e.TOTAL_CHARGES_TAX).toFixed(2)-parseFloat(e.BROKERAGE).toFixed(2),i=t>0&&a>0,c=i?(a-t)*s*l-e.TOTAL_CHARGES_TAX:0;return{buyValue:t*s*l,sellValue:a*s*l,tradeValue:isNaN(n)?0:n,brokerage:e.BROKERAGE,otherCharges:o,grossPnl:i?(a-t)*s*l:0,netPnl:c,exchangeCharges:e.EXCHANGE_CHARGES,dpCharges:e.DP_CHARGES,sttCharges:e.STT_CHARGES,sebiCharges:e.SEBI_CHARGES,ipftCharges:e.IPFT_CHARGES,stampDuty:e.STAMP_DUTY,gstCharges:e.GST_CHARGES,totalCharges:e.TOTAL_CHARGES_TAX,breakevenPrice:e.BREAKEVEN_PRICE}}var N=a(67684),T=a(62701),w=a
+======================================================================
+
+=== Match at 20748 ===
+=parseFloat(e.TOTAL_CHARGES_TAX).toFixed(2)-parseFloat(e.BROKERAGE).toFixed(2),i=t>0&&a>0,c=i?(a-t)*s*l-e.TOTAL_CHARGES_TAX:0;return{buyValue:t*s*l,sellValue:a*s*l,tradeValue:isNaN(n)?0:n,brokerage:e.BROKERAGE,otherCharges:o,grossPnl:i?(a-t)*s*l:0,netPnl:c,exchangeCharges:e.EXCHANGE_CHARGES,dpCharges:e.DP_CHARGES,sttCharges:e.STT_CHARGES,sebiCharges:e.SEBI_CHARGES,ipftCharges:e.IPFT_CHARGES,stampDuty:e.STAMP_DUTY,gstCharges:e.GST_CHARGES,totalCharges:e.TOTAL_CHARGES_TAX,breakevenPrice:e.BREAKEVEN_PRICE}}var N=a(67684),T=a(62701),w=a(16159),B=a(
+======================================================================
+
+=== Match at 27632 ===
+rtant",opacity:1}},className:t}))}})})})})})};var R=a(83030),U=a(28128),L=a(19689),G=a(42592);let H=function(e){var t=e.calculatedValues,a=e.isCommodity,s=[{label:"Turnover",key:"tradeValue"},{label:"Brokerage",key:"brokerage"},{label:"Exchange Transaction Charges",key:"exchangeCharges"},{label:"DP Charges",key:"dpCharges"},{label:void 0!==a&&a?"Commodities Transaction Tax CTT":"Securities Transaction Tax STT",key:"sttCharges"},{label:"SEBI Turnover Charges",key:"sebiCharges"},{label:"Investor Protection Fund Trust IPFT",key:"ipftCharges"},{lab
+======================================================================
+
+=== Match at 27648 ===
+}},className:t}))}})})})})})};var R=a(83030),U=a(28128),L=a(19689),G=a(42592);let H=function(e){var t=e.calculatedValues,a=e.isCommodity,s=[{label:"Turnover",key:"tradeValue"},{label:"Brokerage",key:"brokerage"},{label:"Exchange Transaction Charges",key:"exchangeCharges"},{label:"DP Charges",key:"dpCharges"},{label:void 0!==a&&a?"Commodities Transaction Tax CTT":"Securities Transaction Tax STT",key:"sttCharges"},{label:"SEBI Turnover Charges",key:"sebiCharges"},{label:"Investor Protection Fund Trust IPFT",key:"ipftCharges"},{label:"Stamp Duty",
+======================================================================
+
+=== Match at 31869 ===
+his with a basic example:<br/><br/>Person A has placed an intraday buy trade of 50 shares of HDFC Bank at Rs 1520.<br/><br/>The total value of this trade becomes Rs 1520 X 50 shares = Rs 76,000. Now, brokerage on this trade will be :<br/><br/>Rs 76,000 X 0.03% = Rs 22.8 or Rs 20 whichever is lower. So Rs 20 in this case.<br/><br/>To make the above calculations easier in case of complex situations, we have introduced the Dhan Brokerage calculator."},{id:"how-to-use-brokerage-calculator",title:"How To Use Dhan Brokerage Calculator?",answer:"Dhan 
+======================================================================
+
+=== Match at 32098 ===
+be :<br/><br/>Rs 76,000 X 0.03% = Rs 22.8 or Rs 20 whichever is lower. So Rs 20 in this case.<br/><br/>To make the above calculations easier in case of complex situations, we have introduced the Dhan Brokerage calculator."},{id:"how-to-use-brokerage-calculator",title:"How To Use Dhan Brokerage Calculator?",answer:"Dhan brokerage calculator allows you to calculate equity as well as futures and options brokerages.<br/><br/>To use this brokerage calculator, follow the below steps:",points:[{detail:"Type in name of the stock/contract you want to in
+======================================================================
+

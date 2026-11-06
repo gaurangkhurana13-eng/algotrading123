@@ -1,0 +1,4 @@
+V36_2020_FULL Results:
+Trades: 145
+Win Rate: 49.0%
+Net PnL: Rs -264.69

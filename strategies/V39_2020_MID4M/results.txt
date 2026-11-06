@@ -1,0 +1,4 @@
+V39_2020_MID4M Results:
+Trades: 43
+Win Rate: 60.5%
+Net PnL: Rs +14.94

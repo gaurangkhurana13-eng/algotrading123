@@ -1,0 +1,4 @@
+V43_CERT_2026 Results:
+Trades: 59
+Win Rate: 57.6%
+Net PnL: Rs +2088.28

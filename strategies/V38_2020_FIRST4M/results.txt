@@ -1,0 +1,4 @@
+V38_2020_FIRST4M Results:
+Trades: 30
+Win Rate: 43.3%
+Net PnL: Rs -78.24
