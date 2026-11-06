@@ -1,0 +1,126 @@
+//@version=5
+strategy("PC Jeweller 1m Live Predator [Official V3]", 
+         overlay=true, 
+         initial_capital=500, 
+         currency=currency.INR, 
+         commission_type=strategy.commission.cash_per_order, 
+         commission_value=1.5,   // ₹3.00 Dhan Roundtrip
+         pyramiding=0)
+
+// ==========================================
+// 1. POSITION SIZING & DHAN 5X LEVERAGE
+// ==========================================
+useCompounding = input.bool(true, title="Enable Live Balance Compounding")
+fixedLeverage  = input.float(5.0, title="Dhan MIS Leverage", minval=1.0, maxval=5.0)
+
+// Calculates exact shares based on live capital & 5x leverage
+currentPower = useCompounding ? (strategy.equity * fixedLeverage) : (500.0 * fixedLeverage)
+calcQty      = math.max(1, math.floor(currentPower / close))
+
+maxTradesPerDay = input.int(2, title="Max Sniper Shots Per Day", minval=1, maxval=2)
+
+// ==========================================
+// 2. TIMING & 30-MIN ORB SETUP (IST)
+// ==========================================
+isNewDay       = ta.change(time("D")) != 0
+inOrbSession   = not na(time(timeframe.period, "0915-0945:1234567")) // 30-min Opening Filter
+inTradeSession = not na(time(timeframe.period, "0945-1445:1234567"))
+isEOD          = not na(time(timeframe.period, "1515-1530:1234567"))
+
+var float orbHigh   = na
+var float orbLow    = na
+var int tradesToday = 0
+
+if isNewDay
+    orbHigh     := na
+    orbLow      := na
+    tradesToday := 0
+
+if inOrbSession
+    orbHigh := na(orbHigh) ? high : math.max(orbHigh, high)
+    orbLow  := na(orbLow)  ? low  : math.min(orbLow, low)
+
+plot(orbHigh, title="ORB High (09:45)", color=color.new(#00E676, 0), linewidth=2, style=plot.style_linebr)
+plot(orbLow,  title="ORB Low (09:45)",  color=color.new(#FF5252, 0), linewidth=2, style=plot.style_linebr)
+
+// ==========================================
+// 3. INSTITUTIONAL FILTERS
+// ==========================================
+vwapVal  = ta.vwap(close)
+dailyEma = request.security(syminfo.tickerid, "D", ta.ema(close, 20)[1], lookahead=barmerge.lookahead_on)
+volSma   = ta.sma(volume, 20)
+volSpike = volume > volSma * 1.05
+
+plot(vwapVal, title="VWAP", color=color.new(#29B6F6, 0), linewidth=2)
+
+// ==========================================
+// 4. THE 2 PROVEN WINNING ENTRIES
+// ==========================================
+// Entry 1: Morning ORB High Breakout after 09:45
+entry1 = inTradeSession and tradesToday == 0 and not na(orbHigh) and 
+         ta.crossover(close, orbHigh) and close > vwapVal and close > dailyEma and volSpike
+
+// Entry 2: Afternoon Momentum Push (Breakout of 15-min consolidation)
+highestRecent = ta.highest(high[1], 15)
+entry2 = inTradeSession and tradesToday == 1 and 
+         ta.crossover(close, highestRecent) and close > vwapVal and close > dailyEma and volSpike
+
+validEntry = (entry1 or entry2) and strategy.position_size == 0 and tradesToday < maxTradesPerDay
+
+// Execution Variables
+var float entryPrice = 0.0
+var float slLevel    = 0.0
+var float tpLevel    = 0.0
+
+if (validEntry)
+    tradesToday := tradesToday + 1
+    entryPrice  := close
+    
+    // Proven V3 Settings: 1.2% Risk, 2.5% Target with 1.2% Trail Lock
+    slDist   = close * 0.012
+    slLevel  := close - slDist
+    tpLevel  := close + (slDist * 2.1)
+    
+    strategy.entry("Long_Sniper", strategy.long, qty=calcQty, comment="SNIPER #" + str.tostring(tradesToday))
+    strategy.exit("Exit_Sniper", "Long_Sniper", limit=tpLevel, stop=slLevel, 
+                  trail_points=close * 0.012 / syminfo.mintick, 
+                  trail_offset=close * 0.006 / syminfo.mintick, 
+                  comment="TP / TRAIL EXIT")
+
+// 15:15 PM EOD Mandatory Square-Off (Zero Dhan Fine)
+if (isEOD and strategy.position_size != 0)
+    strategy.close_all(comment="15:15 EOD Exit")
+
+// Visual Signal Markers
+plotshape(validEntry, title="Sniper Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small, text="V3 BUY")
+
+// ==========================================
+// 5. LIVE PERFORMANCE DASHBOARD
+// ==========================================
+var table dash = table.new(position.top_right, 2, 6, bgcolor=color.new(color.black, 10), border_width=1, border_color=color.gray)
+
+if barstate.islast
+    totTrades = strategy.closedtrades
+    winTrades = strategy.wintrades
+    netProf   = strategy.netprofit
+    maxDD     = strategy.max_drawdown
+    winRate   = totTrades > 0 ? (winTrades / totTrades) * 100 : 0.0
+    curBal    = strategy.equity
+
+    table.cell(dash, 0, 0, "Predator V3 Official", bgcolor=color.new(color.green, 30), text_color=color.white)
+    table.cell(dash, 1, 0, "Live Status", bgcolor=color.new(color.green, 30), text_color=color.white)
+    
+    table.cell(dash, 0, 1, "Total Trades", text_color=color.white)
+    table.cell(dash, 1, 1, str.tostring(totTrades), text_color=color.yellow)
+    
+    table.cell(dash, 0, 2, "Win Rate", text_color=color.white)
+    table.cell(dash, 1, 2, str.tostring(winRate, "#.##") + "%", text_color=winRate >= 50 ? color.green : color.red)
+    
+    table.cell(dash, 0, 3, "Max Drawdown", text_color=color.white)
+    table.cell(dash, 1, 3, "₹" + str.tostring(maxDD, "#.##"), text_color=color.red)
+
+    table.cell(dash, 0, 4, "Current Balance", text_color=color.white)
+    table.cell(dash, 1, 4, "₹" + str.tostring(curBal, "#.##"), text_color=color.aqua)
+    
+    table.cell(dash, 0, 5, "Net Profit (Post Tax)", text_color=color.white)
+    table.cell(dash, 1, 5, "₹" + str.tostring(netProf, "#.##"), text_color=netProf >= 0 ? color.green : color.red)
