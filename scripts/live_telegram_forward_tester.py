@@ -247,9 +247,21 @@ def format_v3_bear_exit(symbol: str, entry_p: float, exit_p: float, qty: int, re
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
-# ==============================================================================
-# LIVE TRI-ENGINE SCANNER ENGINE
-# ==============================================================================
+def safe_get_hist(tv, symbol: str, exchange: str, interval, n_bars: int, max_retries: int = 2):
+    """Safely fetch historical candles with automatic retry and auto-reconnect."""
+    from tvDatafeed import TvDatafeed
+    for attempt in range(max_retries):
+        try:
+            df = tv.get_hist(symbol=symbol, exchange=exchange, interval=interval, n_bars=n_bars)
+            if df is not None and not df.empty:
+                return df, tv
+        except Exception:
+            try:
+                tv = TvDatafeed()
+            except Exception:
+                pass
+            time.sleep(0.5)
+    return None, tv
 def run_tri_engine_scanner(initial_wallet: float = 500.0):
     from tvDatafeed import TvDatafeed, Interval
 
@@ -348,7 +360,7 @@ def run_tri_engine_scanner(initial_wallet: float = 500.0):
         for sym in list(positions_v43.keys()):
             pos = positions_v43[sym]
             try:
-                df_cur = tv.get_hist(symbol=sym, exchange="NSE", interval=Interval.in_1_minute, n_bars=3)
+                df_cur, tv = safe_get_hist(tv, sym, "NSE", Interval.in_1_minute, n_bars=3)
                 if df_cur is None or df_cur.empty: continue
                 cur_close = float(df_cur["close"].iloc[-1])
                 cur_high = float(df_cur["high"].iloc[-1])
@@ -382,7 +394,7 @@ def run_tri_engine_scanner(initial_wallet: float = 500.0):
         for sym in list(positions_v3_bull.keys()):
             pos = positions_v3_bull[sym]
             try:
-                df_cur = tv.get_hist(symbol=sym, exchange="NSE", interval=Interval.in_1_minute, n_bars=3)
+                df_cur, tv = safe_get_hist(tv, sym, "NSE", Interval.in_1_minute, n_bars=3)
                 if df_cur is None or df_cur.empty: continue
                 cur_close = float(df_cur["close"].iloc[-1])
                 cur_high = float(df_cur["high"].iloc[-1])
@@ -427,7 +439,7 @@ def run_tri_engine_scanner(initial_wallet: float = 500.0):
         for sym in list(positions_v3_bear.keys()):
             pos = positions_v3_bear[sym]
             try:
-                df_cur = tv.get_hist(symbol=sym, exchange="NSE", interval=Interval.in_1_minute, n_bars=3)
+                df_cur, tv = safe_get_hist(tv, sym, "NSE", Interval.in_1_minute, n_bars=3)
                 if df_cur is None or df_cur.empty: continue
                 cur_close = float(df_cur["close"].iloc[-1])
                 cur_high = float(df_cur["high"].iloc[-1])
@@ -474,7 +486,7 @@ def run_tri_engine_scanner(initial_wallet: float = 500.0):
         if cur_time >= t_trade_start and cur_time <= datetime.time(14, 15) and len(positions_v43) == 0 and trades_today_v43 < 2:
             for s in V43_30_UNIVERSE:
                 try:
-                    df_15m = tv.get_hist(symbol=s, exchange="NSE", interval=Interval.in_15_minute, n_bars=60)
+                    df_15m, tv = safe_get_hist(tv, s, "NSE", Interval.in_15_minute, n_bars=60)
                     if df_15m is None or len(df_15m) < 45: continue
                     c = df_15m["close"]
                     h = df_15m["high"]
@@ -552,18 +564,24 @@ def run_tri_engine_scanner(initial_wallet: float = 500.0):
                 if s in positions_v3_bull or trades_today_v3_bull.get(s, 0) >= 2:
                     continue
                 try:
-                    df_1m = tv.get_hist(symbol=s, exchange="NSE", interval=Interval.in_1_minute, n_bars=300)
+                    df_1m, tv = safe_get_hist(tv, s, "NSE", Interval.in_1_minute, n_bars=450)
                     if df_1m is None or len(df_1m) < 40: continue
 
                     # Filter bars of today
                     df_today = df_1m[df_1m.index.date == cur_date]
                     if df_today.empty or len(df_today) < 30: continue
 
-                    # ORB Calculation (09:15 - 09:45)
-                    orb_bars = df_today[(df_today.index.time >= datetime.time(9, 15)) & (df_today.index.time <= datetime.time(9, 45))]
-                    if orb_bars.empty: continue
-                    orb_high = float(orb_bars['high'].max())
-                    orb_low = float(orb_bars['low'].min())
+                    # ORB Persistent Cache (09:15 - 09:45)
+                    if s not in orb_cache:
+                        orb_bars = df_today[(df_today.index.time >= datetime.time(9, 15)) & (df_today.index.time <= datetime.time(9, 45))]
+                        if not orb_bars.empty:
+                            orb_cache[s] = {
+                                'high': float(orb_bars['high'].max()),
+                                'low': float(orb_bars['low'].min())
+                            }
+                    if s not in orb_cache: continue
+                    orb_high = orb_cache[s]['high']
+                    orb_low = orb_cache[s]['low']
 
                     # VWAP
                     tp = (df_today['high'] + df_today['low'] + df_today['close']) / 3.0
@@ -613,16 +631,22 @@ def run_tri_engine_scanner(initial_wallet: float = 500.0):
                 if s in positions_v3_bear or trades_today_v3_bear.get(s, 0) >= 2:
                     continue
                 try:
-                    df_1m = tv.get_hist(symbol=s, exchange="NSE", interval=Interval.in_1_minute, n_bars=300)
+                    df_1m, tv = safe_get_hist(tv, s, "NSE", Interval.in_1_minute, n_bars=450)
                     if df_1m is None or len(df_1m) < 40: continue
 
                     df_today = df_1m[df_1m.index.date == cur_date]
                     if df_today.empty or len(df_today) < 30: continue
 
-                    # ORB Calculation (09:15 - 09:45)
-                    orb_bars = df_today[(df_today.index.time >= datetime.time(9, 15)) & (df_today.index.time <= datetime.time(9, 45))]
-                    if orb_bars.empty: continue
-                    orb_low = float(orb_bars['low'].min())
+                    # ORB Persistent Cache (09:15 - 09:45)
+                    if s not in orb_cache:
+                        orb_bars = df_today[(df_today.index.time >= datetime.time(9, 15)) & (df_today.index.time <= datetime.time(9, 45))]
+                        if not orb_bars.empty:
+                            orb_cache[s] = {
+                                'high': float(orb_bars['high'].max()),
+                                'low': float(orb_bars['low'].min())
+                            }
+                    if s not in orb_cache: continue
+                    orb_low = orb_cache[s]['low']
 
                     # VWAP
                     tp = (df_today['high'] + df_today['low'] + df_today['close']) / 3.0
