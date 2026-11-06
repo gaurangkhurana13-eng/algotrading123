@@ -1,4 +1,4 @@
-name: Bhavishya V43 Titan Live Cloud Forward-Tester
+name: Tri-Engine Live Cloud Forward-Tester (V43 Titan + V3 Bull + V3 Bear)
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Allows manual 1-click start anytime from phone or web
 
 jobs:
-  run-v43-live-scanner:
+  run-tri-engine-scanner:
     runs-on: ubuntu-latest
     timeout-minutes: 380 # Runs for the entire trading day (09:15 to 15:30 IST)
 
@@ -27,7 +27,7 @@ jobs:
           pip install requests pandas numpy websocket-client
           pip install git+https://github.com/rongardF/tvdatafeed.git || pip install tvdatafeed
 
-      - name: Run Bhavishya V43 Titan Live Scanner
+      - name: Run Tri-Engine Live Cloud Forward-Tester
         env:
           PYTHONUNBUFFERED: "1"
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
