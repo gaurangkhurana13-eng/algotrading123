@@ -2,14 +2,14 @@ name: Tri-Engine Live Cloud Forward-Tester (V43 Titan + V3 Bull + V3 Bear)
 
 on:
   schedule:
-    # 03:45 UTC = 09:15 AM IST (Monday to Friday)
-    - cron: '45 3 * * 1-5'
+    # 03:20 UTC = 08:50 AM IST (Mon-Fri) to beat GitHub cron queue delay before 09:15 IST open
+    - cron: '20 3 * * 1-5'
   workflow_dispatch: # Allows manual 1-click start anytime from phone or web
 
 jobs:
   run-tri-engine-scanner:
     runs-on: ubuntu-latest
-    timeout-minutes: 380 # Runs for the entire trading day (09:15 to 15:30 IST)
+    timeout-minutes: 355 # Covers 09:15 IST through 15:25 IST clean EOD shutdown without hitting 360m hard kill
 
     steps:
       - name: Checkout Repository
@@ -24,8 +24,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests pandas numpy websocket-client
-          pip install git+https://github.com/rongardF/tvdatafeed.git || pip install tvdatafeed
+          pip install -r requirements.txt
 
       - name: Run Tri-Engine Live Cloud Forward-Tester
         env:

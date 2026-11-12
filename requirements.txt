@@ -1,4 +1,4 @@
 requests>=2.31.0
-tvDatafeed>=2.1.0
+yfinance>=0.2.40
 pandas>=2.0.0
 numpy>=1.24.0
